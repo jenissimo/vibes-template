@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import { qrCodePlugin } from './vite-qr-plugin';
 
 export default defineConfig({
   plugins: [
@@ -10,7 +11,8 @@ export default defineConfig({
         hmr: true,
       },
     }), 
-    tailwindcss()
+    tailwindcss(),
+    qrCodePlugin()
   ],
   resolve: {
     alias: {
