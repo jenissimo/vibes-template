@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>VIBES Template</title>
+  
+  <!-- PWA meta tags for Apple devices -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VIBES Template">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a0a">
+  
+  <!-- App icons -->
+  <link rel="icon" type="image/svg+xml" href="/app-icon.svg">
+  <link rel="apple-touch-icon" href="/app-icon.svg">
+    </head>
+<body>
+  <!-- Safe-area probe для определения insets -->
+  <div id="safe-probe" style="
+    position: fixed;
+    inset: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    visibility: hidden;
+    pointer-events: none;
+  "></div>
+  
+  <div id="game-container" class="relative w-screen h-screen">
+    <canvas id="pixi-canvas" class="absolute top-0 left-0 z-10"></canvas>
+    <div id="app"></div>
+  </div>
+  
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

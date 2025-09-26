@@ -1,0 +1,29 @@
+{
+  "name": "balance-importer",
+  "version": "1.0.0",
+  "description": "Google Sheets to TypeScript config importer for Idle Neon Miner",
+  "main": "src/index.ts",
+  "scripts": {
+    "import": "bun run src/index.ts",
+    "export-csv": "bun run src/csv-export.ts",
+    "export-sheet": "bun run src/csv-export.ts",
+    "list-sheets": "bun run src/list-sheets.ts",
+    "analyze": "bun run src/analyze-structure.ts",
+    "build": "bun run tsc",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "google-auth-library": "^9.4.0",
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1"
+  },
+  "keywords": ["game", "balance", "google-sheets", "typescript"],
+  "author": "Idle Neon Miner Team"
+}
+

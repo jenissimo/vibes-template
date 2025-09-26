@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# General
+- Use "@" aliases for imports instead ".." from tsconfig.json
+- Pixi ↔ UI communicate only via Nanostores (`src/stores`). Direct access to Pixi scenes from Svelte is forbidden.
+- Use logger from'@/engine/logging'; insteads console.log
+
+# UI
+- We use PIXI 8.13.2, use appropriate APIs
+- We use Svelte 5, so use callback props in Svelte instead createEventDispatcher
+- For UI panles we use src\utils\animations.ts
+- For error checks run `bun run build`.
+
+- For game we using TweenComponent
+- For panels use our layout manager
+  onMount(() => {
+    if (panelElement) {
+      panelPositioningService.registerPanel({
+        id: "resource-panel",
+        anchor: "TL",
+        offsetX: 16, // 4 * 4px = 16px (top-4)
+        offsetY: 0, // 4 * 4px = 16px (left-4)
+        element: panelElement,
+      });
+    }
+  });
+
+  onDestroy(() => {
+    panelPositioningService.unregisterPanel("resource-panel");
+  });
+- Use tailwind with our design system from theme.css

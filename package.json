@@ -1,0 +1,50 @@
+{
+  "name": "idle-neon-miner",
+  "version": "0.1.0",
+  "description": "Idle Neon Miner - неоновая idle игра с майнингом астероидов",
+  "type": "module",
+  "scripts": {
+    "dev": "bunx --bun vite --host",
+    "dev:clean": "bun run clear-cache && bun run dev",
+    "build": "tsc --noEmit && bunx --bun vite build",
+    "preview": "bunx --bun vite preview --host",
+    "clear-cache": "node scripts/clear-cache.js",
+    "fonts:download": "bun run scripts/download-fonts.ts",
+    "fonts:manual": "bun run scripts/download-fonts.ts --manual",
+    "fonts:fallback": "bun run scripts/download-fonts.ts --fallback",
+    "cap:add": "bunx cap add",
+    "cap:sync": "bunx cap sync",
+    "cap:run": "bunx cap run",
+    "check": "svelte-check --fail-on-warnings --diagnostic-sources js,svelte",
+    "balance:import": "cd tools/balance-importer && bun install && bun run import",
+    "balance:dev": "cd tools/balance-importer && bun run dev"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/haptics": "^7.0.2",
+    "@capacitor/preferences": "^7.0.2",
+    "@capacitor/status-bar": "^7.0.3",
+    "gsap": "^3.13.0",
+    "howler": "^2.2.4",
+    "lucide-svelte": "^0.544.0",
+    "motion": "^12.23.12",
+    "nanostores": "^1.0.1",
+    "pixi.js": "^8.13.2",
+    "spectorjs": "^0.9.30",
+    "svelte": "^5.38.10",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/howler": "^2.2.12",
+    "@types/node": "^20.19.13",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^6.3.6"
+  }
+}
