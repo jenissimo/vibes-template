@@ -52,7 +52,7 @@
 
 1.  **Клонируйте репозиторий:**
     ```bash
-    git clone <your-repo-url>
+    git clone https://github.com/jenissimo/vibes-template
     ```
 
 2.  **Установите зависимости:**
