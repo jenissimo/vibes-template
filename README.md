@@ -1,7 +1,7 @@
 # VIBES - Vaporwave Inspired Bitmap Engine Stack
 
 <div align="center">
-  <img src="src/assets/sprites/vibes.png" alt="VIBES" width="512" height="512" style="image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;">
+  <img src="vibes_logo.png" alt="VIBES" width="512" height="512" style="image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;">
 </div>
 
 ## О проекте
