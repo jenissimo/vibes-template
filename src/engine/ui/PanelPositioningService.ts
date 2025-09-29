@@ -19,6 +19,7 @@ export class PanelPositioningService {
   private panels = new Map<string, PanelConfig>();
   private currentLayout: LayoutResult | null = null;
   private resizeHandler: (() => void) | null = null;
+  private resizeTimeout: number | null = null;
 
   /**
    * Регистрация панели для позиционирования
@@ -148,15 +149,26 @@ export class PanelPositioningService {
     if (this.resizeHandler) return;
     
     this.resizeHandler = () => {
-      // Fallback: если layout не обновился через EventBus, обновляем вручную
+      // Debounced обновление UI панелей при ресайзе
       if (this.panels.size > 0) {
-        logger.debug('🔄 Fallback resize handler triggered', { source: 'game' });
-        this.forceUpdateAllPanels();
+        // Очищаем предыдущий timeout
+        if (this.resizeTimeout) {
+          clearTimeout(this.resizeTimeout);
+        }
+        
+        // Устанавливаем новый timeout для debounce
+        this.resizeTimeout = window.setTimeout(() => {
+          logger.debug('🔄 Debounced resize handler triggered', { source: 'game' });
+          this.forceUpdateAllPanels();
+          this.resizeTimeout = null;
+        }, 16); // ~60fps
       }
     };
     
+    // Используем both resize и orientationchange для лучшего покрытия
     window.addEventListener('resize', this.resizeHandler);
-    logger.debug('📐 Added fallback resize handler', { source: 'game' });
+    window.addEventListener('orientationchange', this.resizeHandler);
+    logger.debug('📐 Added immediate resize handlers', { source: 'game' });
   }
 
   /**
@@ -173,8 +185,11 @@ export class PanelPositioningService {
     // Вычисляем новый layout
     const newLayout = this.computeLayout(screenW, screenH, insets);
     
-    // Обновляем все панели
-    this.updateLayout(newLayout);
+    // Обновляем все панели с небольшой задержкой для стабилизации DOM
+    requestAnimationFrame(() => {
+      this.updateLayout(newLayout);
+      logger.info(`🔄 Force updated ${this.panels.size} panels on resize`, { source: 'game' });
+    });
   }
 
   /**
@@ -253,7 +268,14 @@ export class PanelPositioningService {
     // Удаляем fallback обработчик
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler);
+      window.removeEventListener('orientationchange', this.resizeHandler);
       this.resizeHandler = null;
+    }
+    
+    // Очищаем timeout если он есть
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = null;
     }
   }
 
