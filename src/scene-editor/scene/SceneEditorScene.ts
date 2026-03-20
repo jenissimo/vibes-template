@@ -239,7 +239,7 @@ export class SceneEditorScene extends Scene {
 
   private resolveStage(): PIXI.Container {
     if (this.managers?.stage) return this.managers.stage as PIXI.Container;
-    if (this.managers?.render?.stage) return this.managers.render.stage as PIXI.Container;
+    if (this.managers?.renderer?.getStage()) return this.managers.renderer.getStage();
 
     const err = new Error('SceneEditorScene: stage container missing');
     logger.error('❌ SceneEditorScene initialization failed', err);

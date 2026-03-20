@@ -4,87 +4,87 @@
   <img src="vibes_logo.png" alt="VIBES" width="512" height="512" style="image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;">
 </div>
 
-## О проекте
+## About
 
-**VIBES** — это стартовый шаблон (template) для создания кросс-платформенных игр. В его основе лежит стек технологий, ориентированный на производительность, модульность и чёткое разделение логики.
+**VIBES** is a starter template for building cross-platform games. It's built on a tech stack focused on performance, modularity, and clean separation of concerns.
 
-Проект использует трёхслойную архитектуру:
-- **View Layer**: Рендеринг (PixiJS) и UI (Svelte 5).
-- **State & Logic Layer**: Управление состоянием (Nanostores) и игровая логика (GameObject-Component).
-- **Platform Layer**: Нативные возможности (Capacitor).
+The project follows a three-layer architecture:
+- **View Layer**: Rendering (PixiJS) and UI (Svelte 5).
+- **State & Logic Layer**: State management (Nanostores) and game logic (GameObject-Component).
+- **Platform Layer**: Native capabilities (Capacitor).
 
-## Философия
+## Philosophy
 
-- **Композиция через компоненты**: `GameObject` собираются из независимых компонентов, которые содержат данные и, иногда, логику.
-- **Stores — единственный мост**: Никаких прямых вызовов между PixiJS и Svelte. Всё взаимодействие происходит через Nanostores.
-- **Конфигурируемость**: Весь игровой баланс вынесен в `src/stores/game/Config.ts`.
-- **Малые модули**: Проект состоит из небольших, сфокусированных компонентов, систем и сторов.
-- **Два режима**: Игра и редактор сцен.
+- **Composition over inheritance**: `GameObject`s are assembled from independent components that hold data and logic.
+- **Stores as the only bridge**: No direct calls between PixiJS and Svelte. All communication goes through Nanostores.
+- **Configuration-driven**: All game balance values live in `src/stores/game/Config.ts`.
+- **Small modules**: The project is made up of small, focused components, systems, and stores.
+- **Two modes**: Game and scene editor.
 
-## Технологический стек
+## Tech Stack
 
-- **Рендеринг**: [PixiJS 8.13.2](https://pixijs.com/)
-- **Интерфейс**: [Svelte 5](https://svelte.dev/)
-- **Управление состоянием**: [Nanostores](https://github.com/nanostores/nanostores)
-- **Стилизация**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **Анимации**: [Motion One](https://motion.dev/)
-- **Архитектура**: Компонентно-ориентированная (Component-based)
-- **Среда выполнения**: [Bun](https://bun.sh/)
-- **Мобильная платформа**: [Capacitor](https://capacitorjs.com/)
+- **Rendering**: [PixiJS 8](https://pixijs.com/)
+- **UI**: [Svelte 5](https://svelte.dev/)
+- **State management**: [Nanostores](https://github.com/nanostores/nanostores)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Animations**: [Motion One](https://motion.dev/)
+- **Architecture**: Component-based (GameObject-Component)
+- **Runtime**: [Bun](https://bun.sh/)
+- **Mobile**: [Capacitor](https://capacitorjs.com/)
 
-## Структура проекта
+## Project Structure
 
 ```
 .
-├── docs/                 # Документация
-│   └── architecture.md   # Детальное описание архитектуры
+├── docs/                 # Documentation
+│   └── architecture.md   # Detailed architecture overview
 ├── src/
-│   ├── engine/           # Игровой движок (ядро)
-│   ├── game/             # Игровая логика (компоненты, системы)
-│   ├── stores/           # Nanostores (состояние игры и UI)
-│   ├── ui/               # Svelte-компоненты интерфейса
-│   ├── scene-editor/     # Редактор сцен
-│   └── main.ts           # Точка входа в приложение
-└── AGENTS.md             # Правила для AI-ассистентов
+│   ├── engine/           # Game engine (core)
+│   ├── game/             # Game logic (components, systems)
+│   ├── stores/           # Nanostores (game and UI state)
+│   ├── ui/               # Svelte UI components
+│   ├── scene-editor/     # Scene editor
+│   └── main.ts           # Application entry point
+└── AGENTS.md             # AI assistant guidelines
 ```
 
-## Быстрый старт
+## Quick Start
 
-1.  **Клонируйте репозиторий:**
+1.  **Clone the repository:**
     ```bash
     git clone https://github.com/jenissimo/vibes-template
     ```
 
-2.  **Установите зависимости:**
+2.  **Install dependencies:**
     ```bash
     bun install
     ```
 
-3.  **Запустите dev-сервер:**
+3.  **Start the dev server:**
     ```bash
     bun run dev
     ```
 
-## Доступные скрипты
+## Available Scripts
 
-- `bun run dev`: запуск в режиме разработки.
-- `bun run build`: сборка проекта для продакшена.
-- `bun run check`: проверка типов TypeScript.
-- `bun run tsc --noEmit path/to/file.ts`: проверка типов для конкретного файла.
+- `bun run dev`: start in development mode.
+- `bun run build`: build for production.
+- `bun run check`: TypeScript type checking.
+- `bun run tsc --noEmit path/to/file.ts`: type check a specific file.
 
-### Мобильная разработка
+### Mobile Development
 
-- `bun run cap:sync`: синхронизация с Capacitor.
-- `bun run cap:run`: запуск на мобильном устройстве.
+- `bun run cap:sync`: sync with Capacitor.
+- `bun run cap:run`: run on a mobile device.
 
-## Архитектура
+## Architecture
 
-Ключевой принцип архитектуры — строгое разделение ответственности между слоями.
+The core architectural principle is strict separation of concerns between layers.
 
-1.  **View Layer (PixiJS & Svelte)**: Отвечает исключительно за отображение. UI-компоненты подписываются на изменения в сторах и рендерят актуальные данные. Игровой мир рендерится через PixiJS.
-2.  **State & Logic Layer**: Сердце приложения.
-    - **GameObject-Component**: Игровые объекты (`GameObject`) состоят из компонентов, которые содержат данные и логику. Системы используются для глобальных процессов, затрагивающих множество объектов.
-    - **Nanostores**: Хранят глобальное состояние (профиль игрока, настройки UI) и служат мостом для взаимодействия между UI и игровой логикой.
-3.  **Platform Layer (Capacitor)**: Обеспечивает доступ к нативным API для мобильных устройств.
+1.  **View Layer (PixiJS & Svelte)**: Responsible solely for display. UI components subscribe to store changes and render current data. The game world is rendered via PixiJS.
+2.  **State & Logic Layer**: The heart of the application.
+    - **GameObject-Component**: Game objects (`GameObject`) are composed of components that hold data and logic. Systems handle global processes that span multiple objects.
+    - **Nanostores**: Store global state (player profile, UI settings) and serve as the bridge between UI and game logic.
+3.  **Platform Layer (Capacitor)**: Provides access to native APIs for mobile devices.
 
-Подробное описание архитектуры можно найти в файле [`docs/architecture.md`](./docs/architecture.md).
+For a detailed architecture overview, see [`docs/architecture.md`](./docs/architecture.md).

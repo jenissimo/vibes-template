@@ -1,7 +1,7 @@
 {
   "name": "idle-neon-miner",
   "version": "0.1.0",
-  "description": "Idle Neon Miner - неоновая idle игра с майнингом астероидов",
+  "description": "Idle Neon Miner - neon idle game with asteroid mining",
   "type": "module",
   "scripts": {
     "dev": "bunx --bun vite --host",
@@ -20,32 +20,32 @@
     "balance:dev": "cd tools/balance-importer && bun run dev"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/app": "^7.1.0",
-    "@capacitor/core": "^7.4.3",
-    "@capacitor/haptics": "^7.0.2",
-    "@capacitor/preferences": "^7.0.2",
-    "@capacitor/status-bar": "^7.0.3",
-    "gsap": "^3.13.0",
+    "@capacitor/android": "^7.6.0",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/core": "^7.6.0",
+    "@capacitor/haptics": "^7.0.4",
+    "@capacitor/preferences": "^7.0.4",
+    "@capacitor/status-bar": "^7.0.5",
+    "gsap": "^3.14.2",
     "howler": "^2.2.4",
-    "lucide-svelte": "^0.544.0",
-    "motion": "^12.23.12",
-    "nanostores": "^1.0.1",
-    "pixi.js": "^8.13.2",
-    "spectorjs": "^0.9.30",
-    "svelte": "^5.38.10",
-    "zod": "^4.1.8"
+    "lucide-svelte": "^0.577.0",
+    "motion": "^12.38.0",
+    "nanostores": "^1.2.0",
+    "pixi.js": "^8.17.1",
+    "svelte": "^5.54.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.4.3",
-    "@sveltejs/vite-plugin-svelte": "^6.2.0",
-    "@tailwindcss/vite": "^4.1.13",
+    "@capacitor/cli": "^7.6.0",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@tailwindcss/vite": "^4.2.2",
     "@types/howler": "^2.2.12",
-    "@types/node": "^20.19.13",
+    "@types/node": "^20.19.37",
     "qrcode-terminal": "^0.12.0",
-    "svelte-check": "^4.0.0",
-    "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
-    "vite": "^6.3.6"
+    "spectorjs": "^0.9.30",
+    "svelte-check": "^4.4.5",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
   }
 }

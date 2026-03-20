@@ -1,6 +1,7 @@
 // engine/scene/Scene.ts
 import { GameObject } from "../GameObject";
 import { Component } from "../Component";
+import type { GameManagers } from "../types";
 
 export type UpdateStep = (deltaTime: number) => void;
 
@@ -8,10 +9,9 @@ export abstract class Scene {
   readonly gameObjects: GameObject[] = [];
   readonly preUpdateSteps: UpdateStep[] = [];
   readonly postUpdateSteps: UpdateStep[] = [];
-  protected managers: any = null; // Менеджеры игры
+  protected managers: GameManagers | null = null;
 
-  // Инициализация сцены с менеджерами
-  initialize(managers: any) {
+  initialize(managers: GameManagers) {
     this.managers = managers;
   }
 

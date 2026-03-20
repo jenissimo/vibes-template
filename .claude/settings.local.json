@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Projects/vibes-template/src -type f -name *onfig* -o -name *alance*)",
+      "Bash(find /c/Projects/vibes-template -maxdepth 3 -type d ! -path */node_modules* ! -path */.git* ! -path */dist* ! -path */android*)",
+      "Bash(find C:Usersjenis.claudeprojectsC--Projects-vibes-template325c171b-88a6-4565-aeee-81d4de3e3fe8 -type f -name *.json)",
+      "Bash(wc -l /c/Projects/vibes-template/src/**/*.ts /c/Projects/vibes-template/src/**/*.svelte)",
+      "Bash(bun outdated:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "WebFetch(domain:pixijs.download)",
+      "WebFetch(domain:pixijs.com)",
+      "Bash(rm \"C:/Projects/vibes-template/.claude/commands/pixi-developer.md\")",
+      "Bash(rmdir \"C:/Projects/vibes-template/.claude/commands\")",
+      "mcp__chrome-devtools__navigate_page"
+    ]
+  }
+}

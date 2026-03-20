@@ -1,4 +1,5 @@
 // engine/Game.ts
+import * as PIXI from 'pixi.js';
 import { Scene } from "./scene/Scene";
 import { SceneManager } from "./scene/SceneManager";
 import { PixiRenderer } from "./render/PixiRenderer";
@@ -8,7 +9,6 @@ import { EffectSystem } from "./effects/EffectSystem";
 import { audioManager } from "./audio/AudioManager";
 import { logger } from "./logging";
 import { PixiConfig } from "./render/PixiRenderer";
-import { Ticker } from "./Ticker";
 
 export interface GameConfig {
   enableDebugOverlay?: boolean;
@@ -25,7 +25,7 @@ export class Game {
   private inputManager!: InstanceType<typeof InputManager>;
   private effectSystem!: EffectSystem;
   private audioManager = audioManager;
-  private ticker!: Ticker;
+  private tickerCallback: ((ticker: PIXI.Ticker) => void) | null = null;
   private isInitialized = false;
   private config: GameConfig;
 
@@ -89,16 +89,18 @@ export class Game {
         logger.info('✅ EffectSystem создан (будет инициализирован сценой)', { source: 'game' });
       }
 
-      // 7. Инициализация Ticker
-      logger.info('⏱️ Инициализация Ticker...', { source: 'game' });
-      this.ticker = new Ticker();
-      this.ticker.addUpdateCallback((deltaTime) => this.update(deltaTime));
-      logger.info('✅ Ticker готов', { source: 'game' });
+      // 7. Setup game loop via PIXI ticker (single rAF, no dual-ticker desync)
+      logger.info('⏱️ Setting up PIXI ticker callback...', { source: 'game' });
+      this.tickerCallback = (ticker: PIXI.Ticker) => {
+        const deltaTime = Math.min(ticker.deltaMS / 1000, 1 / 30);
+        this.update(deltaTime);
+      };
+      logger.info('✅ Ticker callback ready', { source: 'game' });
 
-      // 8. Настройка FPS лимита
+      // 8. FPS limit
       if (this.config.enableFPSLimit && this.config.targetFPS) {
         this.pixiRenderer.setFPSLimit(this.config.targetFPS);
-        logger.info(`🎯 FPS лимит установлен: ${this.config.targetFPS}`, { source: 'game' });
+        logger.info(`🎯 FPS limit: ${this.config.targetFPS}`, { source: 'game' });
       }
 
       this.isInitialized = true;
@@ -116,22 +118,26 @@ export class Game {
     if (!this.isInitialized) {
       throw new Error('Игра не инициализирована. Вызовите initialize() сначала.');
     }
-    logger.info('🚀 Запуск игры и первой сцены...', { source: 'game' });
+    logger.info('🚀 Starting game...', { source: 'game' });
     this.firstScene.initialize(this.getManagers());
     SceneManager().switch(this.firstScene);
-    
-    // Запускаем Ticker
-    this.ticker.start();
-    logger.info('✅ Стартовая сцена запущена и Ticker запущен', { source: 'game' });
+
+    // Attach to PIXI ticker
+    const pixiTicker = this.pixiRenderer.getApp().ticker;
+    if (this.tickerCallback) {
+      pixiTicker.add(this.tickerCallback);
+    }
+    logger.info('✅ Game started, ticker running', { source: 'game' });
   }
 
   /**
    * Остановка игры
    */
   public stopGame(): void {
-    if (this.ticker) {
-      this.ticker.stop();
-      logger.info('⏹️ Ticker остановлен', { source: 'game' });
+    const pixiTicker = this.pixiRenderer?.getApp()?.ticker;
+    if (pixiTicker && this.tickerCallback) {
+      pixiTicker.remove(this.tickerCallback);
+      logger.info('⏹️ Game loop stopped', { source: 'game' });
     }
   }
 
@@ -208,14 +214,11 @@ export class Game {
    * Получить текущий FPS
    */
   public getFPS(): number {
-    return this.ticker ? this.ticker.getFPS() : 0;
+    return this.pixiRenderer?.getCurrentFPS() ?? 0;
   }
 
-  /**
-   * Проверить, запущен ли игровой цикл
-   */
   public get isRunning(): boolean {
-    return this.ticker ? this.ticker.running : false;
+    return this.pixiRenderer?.getApp()?.ticker?.started ?? false;
   }
 
   /**
@@ -226,10 +229,8 @@ export class Game {
 
     logger.info('🧹 Очистка игрового ядра...', { source: 'game' });
 
-    // Останавливаем Ticker
-    if (this.ticker) {
-      this.ticker.stop();
-    }
+    // Remove game loop from PIXI ticker
+    this.stopGame();
 
     // Очищаем системы в обратном порядке
     if (this.effectSystem) {

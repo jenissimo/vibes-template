@@ -33,7 +33,10 @@ export class GameObject {
     this.components.push(component);
     this.componentIndex.set(component.constructor, component);
     component.gameObject = this;
-    if (this.inScene) component.onAdded();
+    if (this.inScene) {
+      component.scene = this.scene!;
+      component.onAdded();
+    }
     return this;
   }
 
@@ -122,7 +125,10 @@ export class GameObject {
   _onAddedToScene(scene: Scene) {
     this.scene = scene;
     this.inScene = true;
-    for (const component of this.components) component.onAdded();
+    for (const component of this.components) {
+      component.scene = scene;
+      component.onAdded();
+    }
   }
 
   _onRemovedFromScene() {
@@ -138,16 +144,17 @@ export class GameObject {
   }
 
   /**
-   * Отправляет сообщение всем компонентам GameObject
-   * Аналог Unity SendMessage
+   * @deprecated Use EventBus instead of stringly-typed message dispatch.
+   * Will be removed in a future version.
    */
-  sendMessage(methodName: string, value: any = null, options: SendMessageOptions = SendMessageOptions.RequireReceiver) {
+  sendMessage(methodName: string, value: unknown = null, options: SendMessageOptions = SendMessageOptions.RequireReceiver) {
     let messageHandled = false;
 
     for (const component of this.components) {
-      if (typeof (component as any)[methodName] === 'function') {
+      const comp = component as unknown as Record<string, unknown>;
+      if (typeof comp[methodName] === 'function') {
         try {
-          (component as any)[methodName](value);
+          (comp[methodName] as (v: unknown) => void)(value);
           messageHandled = true;
         } catch (error) {
           console.error(`Error calling ${methodName} on ${component.constructor.name}:`, error);
@@ -161,18 +168,19 @@ export class GameObject {
   }
 
   /**
-   * Отправляет сообщение только первому найденному компоненту
-   * Аналог Unity SendMessageUpwards
+   * @deprecated Use EventBus instead of stringly-typed message dispatch.
+   * Will be removed in a future version.
    */
-  sendMessageUpwards(methodName: string, value: any = null, options: SendMessageOptions = SendMessageOptions.RequireReceiver) {
+  sendMessageUpwards(methodName: string, value: unknown = null, options: SendMessageOptions = SendMessageOptions.RequireReceiver) {
     let messageHandled = false;
 
     for (const component of this.components) {
-      if (typeof (component as any)[methodName] === 'function') {
+      const comp = component as unknown as Record<string, unknown>;
+      if (typeof comp[methodName] === 'function') {
         try {
-          (component as any)[methodName](value);
+          (comp[methodName] as (v: unknown) => void)(value);
           messageHandled = true;
-          break; // Останавливаемся на первом найденном
+          break;
         } catch (error) {
           console.error(`Error calling ${methodName} on ${component.constructor.name}:`, error);
         }
