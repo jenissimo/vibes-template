@@ -1,7 +1,9 @@
 // engine/scene/Scene.ts
+import * as PIXI from 'pixi.js';
 import { GameObject } from "../GameObject";
 import { Component } from "../Component";
 import { System } from "../systems/System";
+import { ComponentIndex } from "./ComponentIndex";
 import type { GameManagers } from "../types";
 
 export type UpdateStep = (deltaTime: number) => void;
@@ -10,6 +12,9 @@ export abstract class Scene {
   readonly gameObjects: GameObject[] = [];
   readonly preUpdateSteps: UpdateStep[] = [];
   readonly postUpdateSteps: UpdateStep[] = [];
+  readonly componentIndex = new ComponentIndex();
+  /** Default container for PixiSpriteRenderer when none is explicitly provided. */
+  defaultContainer: PIXI.Container | null = null;
   protected managers: GameManagers | null = null;
   protected systems: System[] = [];
 
@@ -21,6 +26,7 @@ export abstract class Scene {
     this.gameObjects.push(gameObject);
     gameObject.scene = this;
     gameObject._onAddedToScene(this);
+    this.componentIndex.trackAll(gameObject);
     return gameObject;
   }
 
@@ -29,6 +35,7 @@ export abstract class Scene {
     if (index >= 0) {
       this.gameObjects[index] = this.gameObjects[this.gameObjects.length - 1];
       this.gameObjects.pop();
+      this.componentIndex.untrackAll(gameObject);
       gameObject.scene = null;
       gameObject._onRemovedFromScene();
     }
@@ -71,12 +78,17 @@ export abstract class Scene {
   }
 
   /**
-   * Найти все GameObject'ы с определенным компонентом
+   * O(1) query: all GameObjects that have the given component type.
+   */
+  getObjectsWith<T extends Component>(type: new (...args: any[]) => T): ReadonlySet<GameObject> {
+    return this.componentIndex.query(type);
+  }
+
+  /**
+   * Найти все GameObject'ы с определенным компонентом (array version, uses index)
    */
   findGameObjectsWithComponent<T extends Component>(componentType: new (...args: any[]) => T): GameObject[] {
-    return this.gameObjects.filter(gameObject => 
-      gameObject.has(componentType)
-    );
+    return Array.from(this.componentIndex.query(componentType));
   }
 
   /**

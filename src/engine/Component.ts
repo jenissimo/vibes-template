@@ -4,6 +4,9 @@ import type { GameObject } from './GameObject';
 import { Scene } from './scene';
 
 export abstract class Component implements IEventDispatcher {
+  /** Declare required sibling components — checked at GameObject.add() time. */
+  static requiredComponents?: (new (...args: any[]) => Component)[];
+
   gameObject!: GameObject; // GameObject - избегаем циклической зависимости
   scene!: Scene;
   

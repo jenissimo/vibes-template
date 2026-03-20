@@ -117,6 +117,8 @@ export class GameScene extends Scene {
     this.bgC = new PIXI.Container();
     this.gameC = new PIXI.Container();
     stage.addChild(this.bgC, this.gameC);
+    // Set default container so PixiSpriteRenderer auto-resolves it
+    this.defaultContainer = this.gameC;
     return this;
   }
 

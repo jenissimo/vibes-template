@@ -30,12 +30,26 @@ export class GameObject {
   }
   
   add<T extends Component>(component: T) {
+    // RequireComponent check
+    const ctor = component.constructor as typeof Component;
+    if (ctor.requiredComponents) {
+      for (const req of ctor.requiredComponents) {
+        if (!this.has(req)) {
+          throw new Error(
+            `[${this.name || `GO#${this.id}`}] ${ctor.name} requires ${req.name}, but it is missing. Add ${req.name} first.`
+          );
+        }
+      }
+    }
+
     this.components.push(component);
     this.componentIndex.set(component.constructor, component);
     component.gameObject = this;
     if (this.inScene) {
       component.scene = this.scene!;
       component.onAdded();
+      // Notify scene's ComponentIndex
+      this.scene!.componentIndex.track(this, component.constructor);
     }
     return this;
   }
@@ -113,7 +127,10 @@ export class GameObject {
   remove<T extends Component>(ComponentClass: new (...args: any[]) => T) {
     const component = this.get(ComponentClass);
     if (!component) return;
-    if (this.inScene) component.onRemoved();
+    if (this.inScene) {
+      component.onRemoved();
+      this.scene!.componentIndex.untrack(this, ComponentClass);
+    }
     this.componentIndex.delete(ComponentClass);
     const index = this.components.indexOf(component);
     if (index >= 0) {

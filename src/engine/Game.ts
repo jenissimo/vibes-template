@@ -5,9 +5,11 @@ import { SceneManager } from "./scene/SceneManager";
 import { PixiRenderer } from "./render/PixiRenderer";
 import { AssetManager } from "./assets/AssetManager";
 import { InputManager } from "./input/InputManager";
+import { GlobalSystem } from "./systems/GlobalSystem";
 import { GestureRecognizer } from "./input/GestureRecognizer";
 import { EffectSystem } from "./effects/EffectSystem";
 import { audioManager } from "./audio/AudioManager";
+import { CoordinateService } from "./coordinates/CoordinateService";
 import { logger } from "./logging";
 import { PixiConfig } from "./render/PixiRenderer";
 
@@ -26,6 +28,7 @@ export class Game {
   private inputManager!: InstanceType<typeof InputManager>;
   private effectSystem!: EffectSystem;
   private audioManager = audioManager;
+  private globalSystems: GlobalSystem[] = [];
   private tickerCallback: ((ticker: PIXI.Ticker) => void) | null = null;
   private isInitialized = false;
   private config: GameConfig;
@@ -154,13 +157,37 @@ export class Game {
 
     // Обновляем все менеджеры
     this.inputManager.update(deltaTime);
-    
+
     if (this.effectSystem) {
       this.effectSystem.update(deltaTime);
     }
 
+    // Global systems run before scene
+    for (const gs of this.globalSystems) gs.update(deltaTime);
+
     // Обновляем сцену
     SceneManager().update(deltaTime);
+  }
+
+  /**
+   * Add a global system that persists across scene transitions.
+   */
+  public addGlobalSystem<T extends GlobalSystem>(system: T): T {
+    this.globalSystems.push(system);
+    system.start();
+    return system;
+  }
+
+  /**
+   * Remove and destroy a global system.
+   */
+  public removeGlobalSystem(system: GlobalSystem): void {
+    const idx = this.globalSystems.indexOf(system);
+    if (idx >= 0) {
+      this.globalSystems[idx] = this.globalSystems[this.globalSystems.length - 1];
+      this.globalSystems.pop();
+      system.destroy();
+    }
   }
 
   /**
@@ -193,8 +220,9 @@ export class Game {
       input: this.inputManager,
       effects: this.effectSystem,
       audio: this.audioManager,
+      coordinates: CoordinateService.getInstance(),
       stage: this.pixiRenderer.getStage(),
-      game: this, // Добавляем ссылку на сам объект Game
+      game: this,
     };
   }
 
@@ -233,6 +261,10 @@ export class Game {
 
     // Remove game loop from PIXI ticker
     this.stopGame();
+
+    // Destroy global systems
+    for (const gs of this.globalSystems) gs.destroy();
+    this.globalSystems.length = 0;
 
     // Очищаем системы в обратном порядке
     if (this.effectSystem) {

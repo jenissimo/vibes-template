@@ -6,6 +6,7 @@ import type { AssetManager } from './assets/AssetManager';
 import type { InputManager } from './input/InputManager';
 import type { EffectSystem } from './effects/EffectSystem';
 import type { AudioManager } from './audio/AudioManager';
+import type { CoordinateService } from './coordinates/CoordinateService';
 import type { Game } from './Game';
 
 /**
@@ -18,6 +19,7 @@ export interface GameManagers {
   input: InstanceType<typeof InputManager>;
   effects: EffectSystem;
   audio: AudioManager;
+  coordinates: CoordinateService;
   stage: PIXI.Container;
   game: Game;
 }

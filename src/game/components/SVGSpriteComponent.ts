@@ -15,9 +15,10 @@ export class SVGSpriteComponent extends PixiSpriteRenderer {
   private size: number;
   private isLoaded: boolean = false;
 
-  constructor(container: PIXI.Container, config: SVGSpriteConfig) {
-    // Передаем весь конфиг в базовый класс
-    super(container, config);
+  constructor(containerOrConfig: PIXI.Container | SVGSpriteConfig | null, maybeConfig?: SVGSpriteConfig) {
+    // Support both (container, config) and (config) overloads via base class
+    super(containerOrConfig as any, maybeConfig);
+    const config = maybeConfig ?? (containerOrConfig instanceof PIXI.Container || containerOrConfig === null ? {} as SVGSpriteConfig : containerOrConfig);
     
     this.textureFactory = TextureFactory.getInstance();
     this.svgPath = config.svgPath;

@@ -5,6 +5,7 @@
 export { Component } from './Component';
 export { GameObject } from './GameObject';
 export { Game } from './Game';
+export { GameBootstrap } from './GameBootstrap';
 
 // Render components - компоненты для рендеринга
 export * from './components';

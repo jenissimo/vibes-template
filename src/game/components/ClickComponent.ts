@@ -7,6 +7,8 @@ import { EffectSystem, GameObject, IconTextRenderer, TweenComponent } from '@/en
 import { eventBus } from '@/engine/events/EventBus';
 
 export class ClickComponent extends Component {
+  static requiredComponents = [PixiSpriteRenderer];
+
   private spriteComponent: PixiSpriteRenderer | null = null;
   private currencyAmount: number;
   private currencyTexture: PIXI.Texture | null = null;

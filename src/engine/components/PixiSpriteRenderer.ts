@@ -32,23 +32,23 @@ export class PixiSpriteRenderer extends Component implements ITweenable {
   private _localVisible: boolean;
   private _binding: VisibilityBinding;
 
-  constructor(pixiContainer: PIXI.Container | null, config: SpriteRendererConfig) {
+  /**
+   * @param configOrContainer - SpriteRendererConfig (container resolved from scene.defaultContainer),
+   *                            or a PIXI.Container for backward compatibility.
+   * @param maybeConfig - SpriteRendererConfig when first arg is a container (legacy API).
+   */
+  constructor(configOrContainer: SpriteRendererConfig | PIXI.Container | null, maybeConfig?: SpriteRendererConfig) {
     super();
-    this.pixiContainer = pixiContainer;
-    this.config = {
-      x: 0,
-      y: 0,
-      offsetX: 0,
-      offsetY: 0,
-      scale: 1,
-      rotation: 0,
-      alpha: 1,
-      tint: 0xffffff,
-      anchor: { x: 0.5, y: 0.5 },
-      visible: true,
-      visibilityBinding: 'inherit',
-      ...config
-    };
+    // Legacy overload: (container, config)
+    if (maybeConfig !== undefined || configOrContainer instanceof PIXI.Container || configOrContainer === null) {
+      this.pixiContainer = configOrContainer as PIXI.Container | null;
+      const cfg = maybeConfig ?? {};
+      this.config = { x: 0, y: 0, offsetX: 0, offsetY: 0, scale: 1, rotation: 0, alpha: 1, tint: 0xffffff, anchor: { x: 0.5, y: 0.5 }, visible: true, visibilityBinding: 'inherit', ...cfg };
+    } else {
+      // New overload: (config) — container resolved later from scene
+      this.pixiContainer = null;
+      this.config = { x: 0, y: 0, offsetX: 0, offsetY: 0, scale: 1, rotation: 0, alpha: 1, tint: 0xffffff, anchor: { x: 0.5, y: 0.5 }, visible: true, visibilityBinding: 'inherit', ...configOrContainer };
+    }
 
     this._localVisible = !!this.config.visible;
     this._binding = this.config.visibilityBinding!;
@@ -62,6 +62,10 @@ export class PixiSpriteRenderer extends Component implements ITweenable {
   }
 
   onAdded() {
+    // Auto-resolve container from scene if none was explicitly provided
+    if (!this.pixiContainer && this.gameObject?.scene?.defaultContainer) {
+      this.pixiContainer = this.gameObject.scene.defaultContainer;
+    }
     if (this.pixiContainer) {
       this.pixiContainer.addChild(this.sprite);
     }
