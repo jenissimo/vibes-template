@@ -42,7 +42,12 @@ export class SpectorDebugger {
       this.isEnabled = false;
       console.log('🔴 Spector recording stopped');
     } else {
-      this.spector.startCapture();
+      const canvas = document.getElementById('pixi-canvas') as HTMLCanvasElement;
+      if (!canvas) {
+        console.warn('Spector: canvas element not found');
+        return;
+      }
+      this.spector.startCapture(canvas, 500);
       this.isEnabled = true;
       console.log('🟢 Spector recording started');
     }

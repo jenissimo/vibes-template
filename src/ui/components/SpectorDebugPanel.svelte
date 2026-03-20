@@ -74,11 +74,7 @@
       return;
     }
 
-    const ensurePixiApp = () => {
-      if (!ServiceRegistry.has(ServiceKeys.PixiApp)) {
-        return;
-      }
-
+    const startUpdating = () => {
       fpsUpdateInterval = setInterval(() => {
         const pixiApp = ServiceRegistry.has(ServiceKeys.PixiApp)
           ? ServiceRegistry.get(ServiceKeys.PixiApp) as any
@@ -86,22 +82,30 @@
 
         if (pixiApp?.ticker?.FPS !== undefined) {
           fps = Math.round(pixiApp.ticker.FPS);
-          return;
+        } else {
+          fps = 0;
         }
-
-        fps = 0;
       }, 500);
     };
 
-    if (!ServiceRegistry.has(ServiceKeys.PixiApp)) {
-      startDelay = setTimeout(() => {
-        startDelay = null;
-        ensurePixiApp();
-      }, 250);
+    if (ServiceRegistry.has(ServiceKeys.PixiApp)) {
+      startUpdating();
       return;
     }
 
-    ensurePixiApp();
+    // Poll until PixiApp is registered (up to ~5s)
+    let retries = 0;
+    startDelay = setInterval(() => {
+      retries++;
+      if (ServiceRegistry.has(ServiceKeys.PixiApp)) {
+        clearInterval(startDelay!);
+        startDelay = null;
+        startUpdating();
+      } else if (retries > 20) {
+        clearInterval(startDelay!);
+        startDelay = null;
+      }
+    }, 250) as unknown as ReturnType<typeof setTimeout>;
   }
   
   function stopFPSMonitoring() {
