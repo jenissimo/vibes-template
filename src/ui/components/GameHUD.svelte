@@ -4,7 +4,8 @@
   import SettingsModal from '@ui/modals/SettingsModal.svelte';
   import SpectorDebugPanel from '@ui/components/SpectorDebugPanel.svelte';
   import ResourcePanel from '@ui/components/ResourcePanel.svelte';
-  import { gameEventBus } from '@/game/events';
+  import { eventBus } from '@/engine/events/EventBus';
+  import { logger } from '@/engine/logging';
   import { onMount, onDestroy } from 'svelte';
   import { setAppMode } from '@/stores/ui/appState';
   let unsubscribe: (() => void)[] = [];
@@ -12,7 +13,7 @@
   onMount(() => {
     // Подписываемся на игровые события от BottomActionBar
     unsubscribe.push(
-      gameEventBus.on('mode-click', handleModeClick),
+      eventBus.on('mode-click', handleModeClick),
     );
   });
   
@@ -23,7 +24,7 @@
   
   function handleModeClick(data: { modeId: string }) {
     const { modeId } = data;
-    console.log('Mode clicked:', modeId);
+    logger.debug('Mode clicked', { modeId });
     
     // Обрабатываем клики по режимам
     switch (modeId) {
@@ -38,7 +39,7 @@
       case 'market':
         break;
       default:
-        console.log('Unknown mode:', modeId);
+        logger.debug('Unknown mode', { modeId });
     }
   }
   
@@ -46,10 +47,10 @@
 
 <div class="game-hud">
   <div class="absolute top-4 left-32 z-50 flex gap-2">
-    <button class="dev-button" on:click={() => setAppMode('scene-editor')}>
+    <button class="dev-button" onclick={() => setAppMode('scene-editor')}>
       Scene Editor
     </button>
-=  </div>
+  </div>
   <SettingsButton />
   <!-- Панель ресурсов -->
   <ResourcePanel />

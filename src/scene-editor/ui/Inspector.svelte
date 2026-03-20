@@ -1,6 +1,7 @@
 <!-- Inspector Panel -->
 <script lang="ts">
   import { sceneState, updateObject } from '../stores/sceneEditorStore';
+  import { logger } from '@/engine/logging';
   import type { SpriteObject, SpaceBackgroundObject } from '../types';
   import Button from '@/ui/base/Button.svelte';
   import Icon from '@/ui/base/Icon.svelte';
@@ -9,8 +10,7 @@
   import Checkbox from '@/ui/base/Checkbox.svelte';
   import ColorPicker from '@/ui/base/ColorPicker.svelte';
 
-  // Реактивно получаем выбранный объект
-  $: selectedObject = $sceneState.selectedObjectId ? $sceneState.objects[$sceneState.selectedObjectId] : null;
+  const selectedObject = $derived($sceneState.selectedObjectId ? $sceneState.objects[$sceneState.selectedObjectId] : null);
 
   function updateProperty(property: string, value: any) {
     if (!selectedObject) return;
@@ -65,7 +65,7 @@
     
     const sprite = selectedObject as SpriteObject;
     
-    console.log('🖼️ Starting texture upload:', {
+    logger.debug('🖼️ Starting texture upload:', {
       spriteId: sprite.id,
       currentTexture: sprite.texture,
       fileName: file.name,
@@ -82,7 +82,7 @@
     // Создаем URL для изображения
     const imageUrl = URL.createObjectURL(file);
     
-    console.log('🖼️ Created blob URL:', { url: imageUrl });
+    logger.debug('🖼️ Created blob URL:', { url: imageUrl });
     
     // Обновляем текстуру в объекте
     updateObject(sprite.id, { 
@@ -90,7 +90,7 @@
       textureName: file.name 
     });
     
-    console.log('🖼️ Texture uploaded and object updated:', { 
+    logger.debug('🖼️ Texture uploaded and object updated:', { 
       file: file.name, 
       url: imageUrl,
       spriteId: sprite.id,
@@ -255,7 +255,7 @@
                 <input
                   type="file"
                   accept="image/*"
-                  on:change={handleTextureUpload}
+                  onchange={handleTextureUpload}
                   class="hidden"
                   id="texture-upload-{sprite.id}"
                 />
@@ -263,7 +263,7 @@
                   variant="secondary"
                   size="sm"
                   fullWidth={true}
-                  on:click={() => document.getElementById(`texture-upload-${sprite.id}`)?.click()}
+                  onclick={() => document.getElementById(`texture-upload-${sprite.id}`)?.click()}
                 >
                   <Icon name="upload" size="sm" />
                   Upload
@@ -273,7 +273,7 @@
                   <Button
                     variant="secondary"
                     size="sm"
-                    on:click={removeTexture}
+                    onclick={removeTexture}
                   >
                     <Icon name="trash" size="sm" />
                   </Button>
@@ -325,7 +325,7 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <h4 class="text-xs font-medium text-white border-b border-gray-600 pb-1">Filters</h4>
-            <Button size="sm" variant="secondary" on:click={addFilter}>
+            <Button size="sm" variant="secondary" onclick={addFilter}>
               <Icon name="plus" size="sm" />
               Add
             </Button>
@@ -341,7 +341,7 @@
                     onChange={(checked) => updateFilterProperty(index, 'enabled', checked)}
                       id={`filter-enabled-${index}-${sprite.id}`}
                   />
-                  <Button size="sm" variant="danger" on:click={() => removeFilter(index)}>
+                  <Button size="sm" variant="danger" onclick={() => removeFilter(index)}>
                     <Icon name="trash" size="sm" />
                   </Button>
                 </div>
@@ -458,7 +458,7 @@
           <label class="block text-xs text-gray-400 mb-1" for={`space-mood-${spaceBg.id}`}>Mood</label>
             <select
               value={spaceBg.mood}
-              on:change={(e) => updateProperty('mood', (e.target as HTMLSelectElement)?.value || 'cosmic')}
+              onchange={(e) => updateProperty('mood', (e.target as HTMLSelectElement)?.value || 'cosmic')}
               class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white"
             id={`space-mood-${spaceBg.id}`}
             >

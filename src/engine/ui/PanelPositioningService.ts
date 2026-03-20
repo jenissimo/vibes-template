@@ -3,10 +3,9 @@
  */
 
 import type { LayoutResult, Anchor } from '@/engine/render';
-import { placeAnchoredCentered } from '@/engine/render/LayoutEngine';
+import { placeAnchoredCentered, computeLayout, readSafeInsets } from '@/engine/render/LayoutEngine';
 
 import { logger } from '@/engine/logging';
-import { RENDER_CONFIG } from '../render/RenderConfig';
 export interface PanelConfig {
   id: string;
   anchor: Anchor;
@@ -16,6 +15,11 @@ export interface PanelConfig {
 }
 
 export class PanelPositioningService {
+  private static instance: PanelPositioningService;
+  static getInstance(): PanelPositioningService {
+    return (PanelPositioningService.instance ??= new PanelPositioningService());
+  }
+
   private panels = new Map<string, PanelConfig>();
   private currentLayout: LayoutResult | null = null;
   private resizeHandler: (() => void) | null = null;
@@ -180,10 +184,10 @@ export class PanelPositioningService {
     // Получаем текущие размеры экрана и insets
     const screenW = window.innerWidth;
     const screenH = window.innerHeight;
-    const insets = this.readSafeInsets();
-    
+    const insets = readSafeInsets();
+
     // Вычисляем новый layout
-    const newLayout = this.computeLayout(screenW, screenH, insets);
+    const newLayout = computeLayout(screenW, screenH, insets);
     
     // Обновляем все панели с небольшой задержкой для стабилизации DOM
     requestAnimationFrame(() => {
@@ -192,70 +196,7 @@ export class PanelPositioningService {
     });
   }
 
-  /**
-   * Чтение safe-area insets (копия из LayoutEngine)
-   */
-  private readSafeInsets(): { top: number; right: number; bottom: number; left: number } {
-    const el = document.getElementById('safe-probe');
-    if (!el) {
-      return { top: 20, right: 16, bottom: 20, left: 16 };
-    }
-    
-    const cs = getComputedStyle(el);
-    const toPx = (s: string) => {
-      const value = parseFloat(s || '0');
-      return isNaN(value) || !isFinite(value) ? 0 : value;
-    };
-    
-    return {
-      top: toPx(cs.paddingTop),
-      right: toPx(cs.paddingRight),
-      bottom: toPx(cs.paddingBottom),
-      left: toPx(cs.paddingLeft),
-    };
-  }
-
-  /**
-   * Вычисление layout (копия из LayoutEngine)
-   */
-  private computeLayout(screenW: number, screenH: number, insets: { top: number; right: number; bottom: number; left: number }): LayoutResult {
-    const safeW = screenW - insets.left - insets.right;
-    const safeH = screenH - insets.top - insets.bottom;
-
-    // Game layer - fit в safe area
-    const { referenceResolution } = RENDER_CONFIG;
-    const scaleGame = Math.min(safeW / referenceResolution.w, safeH / referenceResolution.h);
-    const game: { x: number; y: number; w: number; h: number } = {
-      w: referenceResolution.w * scaleGame,
-      h: referenceResolution.h * scaleGame,
-      x: insets.left + (safeW - referenceResolution.w * scaleGame) / 2,
-      y: insets.top + (safeH - referenceResolution.h * scaleGame) / 2
-    };
-
-    // Background layer - покрывает весь экран
-    const bg: { x: number; y: number; w: number; h: number } = {
-      w: screenW,
-      h: screenH,
-      x: 0,
-      y: 0
-    };
-
-    const safe: { x: number; y: number; w: number; h: number } = { 
-      x: insets.left, 
-      y: insets.top, 
-      w: safeW, 
-      h: safeH 
-    };
-    
-    return { 
-      bg, 
-      game, 
-      safe, 
-      scaleGame, 
-      scaleBg: 1.0, 
-      scaleUI: 1.0 
-    };
-  }
+  // readSafeInsets and computeLayout are imported from LayoutEngine (deduplication)
 
   /**
    * Полная очистка сервиса (для хот-релоада)
@@ -303,4 +244,4 @@ export class PanelPositioningService {
 }
 
 // Глобальный экземпляр сервиса
-export const panelPositioningService = new PanelPositioningService();
+export const panelPositioningService = PanelPositioningService.getInstance();

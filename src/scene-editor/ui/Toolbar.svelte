@@ -37,7 +37,7 @@
       <Button
         variant={$editorMode === mode.id ? 'primary' : 'secondary'}
         size="sm"
-        on:click={() => handleModeChange(mode.id)}
+        onclick={() => handleModeChange(mode.id)}
       >
         <Icon name={mode.icon} size="sm" />
         {mode.label}
@@ -53,7 +53,7 @@
     <Button
       variant="secondary"
       size="sm"
-      on:click={handleUndo}
+      onclick={handleUndo}
     >
       <Icon name="undo" size="sm" />
       Undo
@@ -61,7 +61,7 @@
     <Button
       variant="secondary"
       size="sm"
-      on:click={handleRedo}
+      onclick={handleRedo}
     >
       <Icon name="redo" size="sm" />
       Redo
@@ -75,7 +75,7 @@
   <Button
     variant={$sceneState.grid.enabled ? 'primary' : 'secondary'}
     size="sm"
-    on:click={handleToggleGrid}
+    onclick={handleToggleGrid}
   >
     <Icon name="grid" size="sm" />
     Grid
@@ -85,7 +85,7 @@
   <Button
     variant="secondary"
     size="sm"
-    on:click={() => {/* TODO: toggle snap */}}
+    onclick={() => {/* TODO: toggle snap */}}
   >
     <Icon name="snap" size="sm" />
     Snap

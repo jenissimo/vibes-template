@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  
   // Import commonly used icons
   import { logger } from '@/engine/logging';
   import { 
@@ -87,7 +85,7 @@
   } from 'lucide-svelte';
   
   // Type for icon components
-  type LucideIcon = any;
+  type LucideIcon = typeof Package;
 
   // Icon mapping for easy access
   const iconMap: Record<string, LucideIcon> = {
@@ -203,6 +201,7 @@
     class?: string;
     disabled?: boolean;
     clickable?: boolean;
+    onclick?: (event: MouseEvent) => void;
   }
 
   const {
@@ -213,46 +212,36 @@
     hover = 'glow',
     class: className = '',
     disabled = false,
-    clickable = false
+    clickable = false,
+    onclick
   }: Props = $props();
 
-  const dispatch = createEventDispatcher<{
-    click: MouseEvent;
-  }>();
-
-  // Get the icon component
-  const IconComponent = iconMap[name];
-  
-  if (!IconComponent) {
-    logger.warn(`Icon "${name}" not found in iconMap`)
-  }
-
-  // Build CSS classes
-  const sizeClass = `icon-${size}`;
-  const colorClass = color === 'gray' ? 'text-gray-400' : 
-                    color === 'white' ? 'text-white' : 
-                    `icon-${color}`;
-  const variantClass = variant === 'default' ? '' : `icon-${variant}`;
-  const hoverClass = hover === 'none' ? '' : `icon-hover-${hover}`;
-  const clickableClass = clickable ? 'icon-button' : '';
-  const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
-
-  const classes = [
-    'icon',
-    sizeClass,
-    colorClass,
-    variantClass,
-    hoverClass,
-    clickableClass,
-    disabledClass,
-    className
-  ].filter(Boolean).join(' ');
-
   function handleClick(event: MouseEvent) {
-    if (!disabled && clickable) {
-      dispatch('click', event);
+    if (!disabled && clickable && onclick) {
+      onclick(event);
     }
   }
+
+  // Get the icon component
+  const IconComponent = $derived.by(() => {
+    const ic = iconMap[name];
+    if (!ic) {
+      logger.warn(`Icon "${name}" not found in iconMap`);
+    }
+    return ic;
+  });
+
+  // Build CSS classes
+  const classes = $derived([
+    'icon',
+    `icon-${size}`,
+    color === 'gray' ? 'text-gray-400' : color === 'white' ? 'text-white' : `icon-${color}`,
+    variant === 'default' ? '' : `icon-${variant}`,
+    hover === 'none' ? '' : `icon-hover-${hover}`,
+    clickable ? 'icon-button' : '',
+    disabled ? 'opacity-50 cursor-not-allowed' : '',
+    className
+  ].filter(Boolean).join(' '));
 </script>
 
 {#if IconComponent}

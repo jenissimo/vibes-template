@@ -1,54 +1,55 @@
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-    
+    import type { Snippet } from 'svelte';
+
     // Types
     type Size = "xs" | "sm" | "md" | "lg" | "xl";
     type Color = "default" | "success" | "warning" | "danger" | "info";
 
-    const dispatch = createEventDispatcher<{
-        click: {
-            value: number | null;
-            min: number;
-            max: number;
-            percent: number;
-        };
-        change: {
-            value: number | null;
-            min: number;
-            max: number;
-            percent: number;
-        };
-    }>();
+    interface Props {
+        value?: number | null;
+        min?: number;
+        max?: number;
+        buffer?: number | null;
+        label?: string;
+        size?: Size;
+        color?: Color;
+        striped?: boolean;
+        animated?: boolean;
+        disabled?: boolean;
+        interactive?: boolean;
+        showPercentage?: boolean;
+        showValue?: boolean;
+        decimalPlaces?: number;
+        format?: ((v: number, min: number, max: number, percent: number) => string) | null;
+        onclick?: (data: { value: number | null; min: number; max: number; percent: number }) => void;
+        onchange?: (data: { value: number | null; min: number; max: number; percent: number }) => void;
+        labelSnippet?: Snippet;
+        suffixSnippet?: Snippet;
+    }
 
-    // ----- Параметры -----
-    /** Текущее значение; null = indeterminate */
-    export let value: number | null = 0;
-    export let min = 0;
-    export let max = 100;
-
-    /** Доп. буфер (0..1 или 0..100, распознаём автоматически) */
-    export let buffer: number | null = null;
-
-    /** Визуал и поведение */
-    export let label = "";
-    export let size: Size = "md";
-    export let color: Color = "default";
-    export let striped = false;
-    export let animated = true;
-    export let disabled = false;
-    /** Делает бар «интерактивным»: фокус, Enter/Space, событие click */
-    export let interactive = false;
-
-    /** Отображение значений */
-    export let showPercentage = true;
-    export let showValue = false;
-    export let decimalPlaces = 0;
-    /** Пользовательский форматтер значения */
-    export let format:
-        | ((v: number, min: number, max: number, percent: number) => string)
-        | null = null;
+    const {
+        value = 0,
+        min = 0,
+        max = 100,
+        buffer = null,
+        label = "",
+        size = "md",
+        color = "default",
+        striped = false,
+        animated = true,
+        disabled = false,
+        interactive = false,
+        showPercentage = true,
+        showValue = false,
+        decimalPlaces = 0,
+        format = null,
+        onclick,
+        onchange,
+        labelSnippet,
+        suffixSnippet
+    }: Props = $props();
 
     // ----- Утилиты -----
     const clamp = (x: number, a: number, b: number) =>
@@ -59,15 +60,15 @@
         parts.filter(Boolean).join(" ");
 
     // ----- Безопасные числовые значения -----
-    $: _min = finite(min, 0);
-    $: _max = Math.max(_min, finite(max, 100));
+    const _min = $derived(finite(min, 0));
+    const _max = $derived(Math.max(_min, finite(max, 100)));
 
-    $: raw = value === null ? null : finite(value, _min);
-    $: clamped = raw === null ? null : clamp(raw, _min, _max);
+    const raw = $derived(value === null ? null : finite(value, _min));
+    const clamped = $derived(raw === null ? null : clamp(raw, _min, _max));
 
-    $: span = Math.max(1e-9, _max - _min); // защита от деления на 0
-    $: frac = clamped === null ? 0 : (clamped - _min) / span;
-    $: percent = +(frac * 100).toFixed(decimalPlaces);
+    const span = $derived(Math.max(1e-9, _max - _min));
+    const frac = $derived(clamped === null ? 0 : (clamped - _min) / span);
+    const percent = $derived(+(frac * 100).toFixed(decimalPlaces));
 
     // Буфер распознаём как 0..1 или 0..100
     function normBuffer(b: number | null): number {
@@ -75,31 +76,30 @@
         const v = b <= 1 ? b : b / 100;
         return clamp(v, 0, 1);
     }
-    $: bufferFrac = normBuffer(buffer);
-    $: bufferPercent = +(bufferFrac * 100).toFixed(decimalPlaces);
+    const bufferFrac = $derived(normBuffer(buffer));
+    const bufferPercent = $derived(+(bufferFrac * 100).toFixed(decimalPlaces));
 
-    // Индетерминантный режим: если value === null
-    $: indeterminate = value === null;
+    const indeterminate = $derived(value === null);
 
-    // Текст для screen readers
-    $: valueText = indeterminate
+    const valueText = $derived(indeterminate
         ? "Loading"
         : format
           ? format(clamped!, _min, _max, percent)
-          : `${clamped?.toFixed(decimalPlaces)}/${_max.toFixed(decimalPlaces)} (${percent.toFixed(decimalPlaces)}%)`;
+          : `${clamped?.toFixed(decimalPlaces)}/${_max.toFixed(decimalPlaces)} (${percent.toFixed(decimalPlaces)}%)`);
 
-    // Идентификаторы для a11y
     let uid = `pg_${Math.random().toString(36).slice(2)}`;
-    $: labelId = `${uid}_label`;
-    $: textId = `${uid}_text`;
+    const labelId = $derived(`${uid}_label`);
+    const textId = $derived(`${uid}_text`);
 
-    // Событие change при изменении value/max/min
-    $: dispatch("change", { value: clamped, min: _min, max: _max, percent });
+    // Emit change
+    $effect(() => {
+        onchange?.({ value: clamped, min: _min, max: _max, percent });
+    });
 
-    // Клики / клавиатура, если интерактивный режим
+    // Клики / клавиатура
     function handleActivate() {
         if (disabled || !interactive) return;
-        dispatch("click", { value: clamped, min: _min, max: _max, percent });
+        onclick?.({ value: clamped, min: _min, max: _max, percent });
     }
     function onKeydown(e: KeyboardEvent) {
         if (!interactive || disabled) return;
@@ -117,13 +117,12 @@
         lg: "12px",
         xl: "16px",
     };
-    $: height = sizePx[size];
+    const height = $derived(sizePx[size]);
 
-    // Инлайн CSS-переменные (проценты и высота)
-    $: styleVars =
+    const styleVars = $derived(
         `--pg-height:${height};` +
         `--pg-percent:${percent}%;` +
-        `--pg-buffer:${bufferPercent}%;`;
+        `--pg-buffer:${bufferPercent}%;`);
 </script>
 
 <div
@@ -148,15 +147,19 @@
     aria-valuetext={valueText}
     aria-busy={indeterminate}
     tabindex={interactive && !disabled ? 0 : undefined}
-    on:click={interactive && !disabled ? handleActivate : undefined}
-    on:keydown={interactive && !disabled ? onKeydown : undefined}
+    onclick={interactive && !disabled ? handleActivate : undefined}
+    onkeydown={interactive && !disabled ? onKeydown : undefined}
 >
     {#if label}
         <div
             id={labelId}
             class="pg-label text-xs text-gray-400 font-mono min-w-[40px]"
         >
-            <slot name="label">{label}</slot>
+            {#if labelSnippet}
+                {@render labelSnippet()}
+            {:else}
+                {label}
+            {/if}
         </div>
     {/if}
 
@@ -197,7 +200,9 @@
                     {indeterminate ? "—" : `${percent.toFixed(decimalPlaces)}%`}
                 </span>
             {/if}
-            <slot name="suffix" />
+            {#if suffixSnippet}
+                {@render suffixSnippet()}
+            {/if}
         </div>
     {/if}
 </div>
@@ -205,10 +210,9 @@
 <style lang="postcss">
     /* Базовые переменные темы */
     .pg-container {
-        /* трек/филл можно переопределять родителем */
         --pg-track: var(--color-gray-800);
         --pg-track-border: var(--color-gray-700);
-        --pg-fill: linear-gradient(to right, #39ff14, #00e5ff); /* default */
+        --pg-fill: linear-gradient(to right, #39ff14, #00e5ff);
         --pg-buffer-color: color-mix(in oklab, white 12%, transparent);
     }
 
@@ -233,7 +237,6 @@
         background: var(--pg-buffer-color);
     }
 
-    /* Интерактив/дизэйбл состояния */
     .pg-container[data-disabled="true"] {
         @apply opacity-60 cursor-not-allowed;
     }
@@ -245,7 +248,6 @@
         box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.4);
     }
 
-    /* Полосатость и анимация */
     .pg-container[data-striped="true"] .pg-fill {
         background-image: linear-gradient(
                 45deg,
@@ -278,7 +280,6 @@
         }
     }
 
-    /* Индетерминантная анимация */
     .pg-container[data-indeterminate="true"] .pg-fill {
         width: 0%;
     }
@@ -303,7 +304,6 @@
         }
     }
 
-    /* Цветовые пресеты через data-атрибут (можно переопределить var(--pg-fill)) */
     .pg-container[data-color="default"] {
         --pg-fill: linear-gradient(to right, #39ff14, #00e5ff);
     }
@@ -320,7 +320,6 @@
         --pg-fill: linear-gradient(to right, #60a5fa, #3b82f6);
     }
 
-    /* Цвет процента под стиль */
     .pg-container[data-color="default"] .pg-percentage {
         color: #00e5ff;
     }
@@ -337,13 +336,11 @@
         color: var(--color-blue-400);
     }
 
-    /* Ховер-эффект только когда интерактивный и не disabled */
     .pg-container:not([data-disabled="true"])[tabindex="0"]:hover {
         transform: translateZ(0) scale(1.01);
         transition: transform 150ms ease;
     }
 
-    /* Уважение к сниженной анимации */
     @media (prefers-reduced-motion: reduce) {
         .pg-fill,
         .pg-indeterminate {

@@ -1,15 +1,30 @@
 <!-- Slider Component -->
 <script lang="ts">
-  export let value: number = 0;
-  export let min: number = 0;
-  export let max: number = 100;
-  export let step: number = 1;
-  export let disabled: boolean = false;
-  export let id: string | undefined = undefined;
-  export let extraClass: string = '';
-  export let onChange: (value: number) => void = () => undefined;
-  export let showInput: boolean = false; // Новый проп для показа input поля
-  export let inputWidth: string = 'w-16'; // Ширина input поля
+  interface Props {
+    value?: number;
+    min?: number;
+    max?: number;
+    step?: number;
+    disabled?: boolean;
+    id?: string;
+    extraClass?: string;
+    onChange?: (value: number) => void;
+    showInput?: boolean;
+    inputWidth?: string;
+  }
+
+  let {
+    value = $bindable(0),
+    min = 0,
+    max = 100,
+    step = 1,
+    disabled = false,
+    id = undefined,
+    extraClass = '',
+    onChange = () => undefined,
+    showInput = false,
+    inputWidth = 'w-16'
+  }: Props = $props();
 
   function handleSliderInput(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -21,15 +36,13 @@
   function handleTextInput(event: Event) {
     const target = event.target as HTMLInputElement;
     const newValue = parseFloat(target.value);
-    
-    // Проверяем границы
+
     const clampedValue = Math.max(min, Math.min(max, newValue));
-    
+
     if (!isNaN(clampedValue)) {
       value = clampedValue;
       onChange(clampedValue);
     } else {
-      // Если введено не число, возвращаем текущее значение
       target.value = value.toString();
     }
   }
@@ -37,27 +50,27 @@
   function handleTextBlur(event: Event) {
     const target = event.target as HTMLInputElement;
     const newValue = parseFloat(target.value);
-    
+
     if (isNaN(newValue)) {
       target.value = value.toString();
     }
   }
 
-  $: percentage = ((value - min) / (max - min)) * 100;
+  const percentage = $derived(((value - min) / (max - min)) * 100);
 </script>
 
 <div class={`slider-container ${extraClass}`}>
   {#if showInput}
     <div class="flex items-center gap-2">
       <input
-        id={id}
+        {id}
         type="range"
         {min}
         {max}
         {step}
         {disabled}
         bind:value
-        on:input={handleSliderInput}
+        oninput={handleSliderInput}
         class="slider flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer
                {disabled ? 'opacity-50 cursor-not-allowed' : ''}
                focus:outline-none focus:ring-2 focus:ring-neon-purple/50"
@@ -66,8 +79,8 @@
       <input
         type="number"
         bind:value
-        on:input={handleTextInput}
-        on:blur={handleTextBlur}
+        oninput={handleTextInput}
+        onblur={handleTextBlur}
         {min}
         {max}
         {step}
@@ -79,14 +92,14 @@
     </div>
   {:else}
     <input
-      id={id}
+      {id}
       type="range"
       {min}
       {max}
       {step}
       {disabled}
       bind:value
-      on:input={handleSliderInput}
+      oninput={handleSliderInput}
       class="slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer
              {disabled ? 'opacity-50 cursor-not-allowed' : ''}
              focus:outline-none focus:ring-2 focus:ring-neon-purple/50"

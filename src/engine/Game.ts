@@ -5,6 +5,7 @@ import { SceneManager } from "./scene/SceneManager";
 import { PixiRenderer } from "./render/PixiRenderer";
 import { AssetManager } from "./assets/AssetManager";
 import { InputManager } from "./input/InputManager";
+import { GestureRecognizer } from "./input/GestureRecognizer";
 import { EffectSystem } from "./effects/EffectSystem";
 import { audioManager } from "./audio/AudioManager";
 import { logger } from "./logging";
@@ -71,6 +72,7 @@ export class Game {
       logger.info('🎮 Инициализация InputManager...', { source: 'game' });
       this.inputManager = InputManager.getInstance();
       this.inputManager.initialize();
+      GestureRecognizer.getInstance().initialize();
       logger.info('✅ InputManager готов', { source: 'game' });
 
       // 5. Инициализация AudioManager
@@ -239,6 +241,8 @@ export class Game {
     }
 
     // AudioManager - singleton, не очищаем при destroy
+
+    GestureRecognizer.getInstance().destroy();
 
     if (this.inputManager) {
       this.inputManager.destroy();

@@ -23,6 +23,11 @@ interface MessageEnvelope<K extends string = string, P = unknown> {
  * forwards telemetry from the game.
  */
 export class RemoteDebugService {
+  private static instance: RemoteDebugService;
+  static getInstance(): RemoteDebugService {
+    return (RemoteDebugService.instance ??= new RemoteDebugService());
+  }
+
   private ws: WebSocket | null = null;
   private readonly queue: MessageEnvelope[] = [];
   private readonly maxQueue = 512;
@@ -89,7 +94,7 @@ export class RemoteDebugService {
   }
 
   private initializeSession(): void {
-    const envelope: MessageEnvelope<'init', any> = {
+    const envelope: MessageEnvelope<'init', { deviceInfo: Record<string, unknown> }> = {
       v: 1,
       sid: this.sessionId,
       seq: this.getNextSeq(),
@@ -110,7 +115,7 @@ export class RemoteDebugService {
 
   private startHeartbeat(): void {
     this.heartbeatInterval = window.setInterval(() => {
-      const envelope: MessageEnvelope<'hb', any> = {
+      const envelope: MessageEnvelope<'hb', { timestamp: number }> = {
         v: 1,
         sid: this.sessionId,
         seq: this.getNextSeq(),
@@ -185,12 +190,12 @@ export class RemoteDebugService {
         break;
       case 'cmd':
         // Server sent a command - handle it
-        this.handleCommand(envelope.payload as any);
+        this.handleCommand(envelope.payload);
         break;
     }
   }
 
-  private handleCommand(command: any): void {
+  private handleCommand(command: unknown): void {
     // TODO: Implement command handling
     logger.info('Received command:', { command, source: 'game' });
   }
@@ -274,4 +279,4 @@ export class RemoteDebugService {
   }
 }
 
-export const remoteDebugService = new RemoteDebugService();
+export const remoteDebugService = RemoteDebugService.getInstance();

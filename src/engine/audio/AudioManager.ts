@@ -23,6 +23,11 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, label: string) =>
 const clamp01 = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
 
 export class AudioManager {
+  private static instance: AudioManager;
+  static getInstance(): AudioManager {
+    return (AudioManager.instance ??= new AudioManager());
+  }
+
   public readonly configStore: AudioConfigStore = atom<AudioConfig>(DEFAULT_AUDIO_CONFIG);
 
   private sfx: SfxPlayer = new SfxPlayer(this.configStore);
@@ -342,4 +347,4 @@ export class AudioManager {
 }
 
 // Singleton
-export const audioManager = new AudioManager();
+export const audioManager = AudioManager.getInstance();

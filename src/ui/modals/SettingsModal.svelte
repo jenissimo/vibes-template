@@ -2,15 +2,14 @@
   import { logger } from '@/engine/logging';
   import Modal from '../base/Modal.svelte';
   import { animations } from '@utils/animations';
-  import { eventBus } from '@/engine/events';
-  import { gameEventBus } from '@/game/events';
+  import { eventBus } from '@/engine/events/EventBus';
   import { profileActions, profileSelectors, profileStore } from '@/stores/game/profile';
   import { onMount, onDestroy } from 'svelte';
   
-  export let isOpen = false;
+  let isOpen = $state(false);
   
   // Audio settings reactive variables - reactive to profile changes
-  let audioSettings = profileSelectors.audio();
+  let audioSettings = $state(profileSelectors.audio());
   
   // Subscribe to profile changes for reactivity
   const unsubscribe = profileStore.subscribe(profile => {
@@ -31,7 +30,7 @@
     
     // Подписываемся на игровые события
     unsubscribeEvents.push(
-      gameEventBus.on('settings-open', () => {
+      eventBus.on('settings-open', () => {
         isOpen = true;
       })
     );
@@ -45,7 +44,7 @@
   
   function handleClose() {
     isOpen = false;
-    gameEventBus.emit('settings-close');
+    eventBus.emit('settings-close');
   }
   
   function handleResetSettings(event: MouseEvent) {
@@ -92,7 +91,7 @@
   {isOpen}
   title="Settings"
   size="sm"
-  on:close={handleClose}
+  onclose={handleClose}
 >
   <div class="settings-container">
     <!-- Audio Settings -->

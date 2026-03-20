@@ -1,6 +1,7 @@
 // engine/prefabs/PrefabPool.ts
 import { GameObject } from '../GameObject';
 import type { Scene } from '../scene/Scene';
+import { logger } from '../logging';
 
 /**
  * Пул для переиспользования GameObject
@@ -57,7 +58,7 @@ export class PrefabPool<T extends GameObject = GameObject> {
    */
   release(obj: T): void {
     if (!this.activeObjects.has(obj)) {
-      console.warn('Объект не был активен в пуле:', obj.name);
+      logger.warn('Объект не был активен в пуле', { name: obj.name });
       return;
     }
     

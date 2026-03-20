@@ -182,8 +182,10 @@ export class NeonGlowScanlineFilter extends Filter {
   }
 
   // ——— Tick ———
+  private static readonly TIME_PERIOD = 10000;
+
   update(deltaSeconds: number) {
-    this._time += deltaSeconds;
+    this._time = (this._time + deltaSeconds) % NeonGlowScanlineFilter.TIME_PERIOD;
     this.resources.neon.uniforms.uTime = this._time;
   }
 

@@ -3,7 +3,7 @@
   import { animations } from '@utils/animations';
   import { panelPositioningService } from '@engine/ui';
   import Icon from '@ui/base/Icon.svelte';
-  import { gameEventBus } from '@/game/events';
+  import { eventBus } from '@/engine/events/EventBus';
   
   let buttonElement: HTMLElement;
   
@@ -26,7 +26,7 @@
   
   function handleSettingsClick() {
     // Отправляем событие через GameEventBus
-    gameEventBus.emit('settings-open');
+    eventBus.emit('settings-open');
   }
   
   function animateButton(event: MouseEvent) {

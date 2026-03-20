@@ -4,7 +4,7 @@
   import { animations } from "@/utils/animations";
   import { panelPositioningService } from "@/engine/ui";
   import creditIcon from "@/assets/icons/credit.png";
-  import { GameEventBus } from "@/game/events/GameEventBus";
+  import { eventBus } from "@/engine/events/EventBus";
   let panelElement: HTMLElement;
   let credits = $state(1000); // Template value
 
@@ -30,12 +30,12 @@
     }
 
     // Subscribe to add credits event
-    GameEventBus.getInstance().on('add-credits', handleAddCredits);
+    eventBus.on('add-credits', handleAddCredits);
   });
 
   onDestroy(() => {
     panelPositioningService.unregisterPanel("resource-panel");
-    GameEventBus.getInstance().off('add-credits', handleAddCredits);
+    eventBus.off('add-credits', handleAddCredits);
   });
   
 

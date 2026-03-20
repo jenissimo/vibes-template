@@ -44,7 +44,7 @@ export class GameScene extends Scene {
   private gameC?: PIXI.Container;
   private fx?: EffectSystem;
   private layerManager?: LayerManager;
-  private spaceBackgroundSystem?: SpaceBackgroundSystem;
+  // SpaceBackgroundSystem is managed via Scene.addSystem()
   
   // Services
   private gameAssetService?: GameAssetService;
@@ -79,17 +79,14 @@ export class GameScene extends Scene {
     this.unsubscribeFromEvents = [];
     eventBus.off('window-resize', this.onResize);
 
-    this.spaceBackgroundSystem?.destroy(); this.spaceBackgroundSystem = undefined;
+    this.destroyAllSystems();
     
     // контейнеры отпустим; Pixi сцена их зачистит по своему жизненному циклу
     this.bgC = undefined;
     this.gameC = undefined;
   }
 
-  update(dt: number): void {
-    super.update(dt);
-    this.spaceBackgroundSystem?.update(dt);
-  }
+  // Systems are updated automatically by Scene.update() via addSystem()
 
   /** ————— Layout ————— */
 
@@ -105,7 +102,7 @@ export class GameScene extends Scene {
     // background
     this.bgC.x = layout.bg.x; this.bgC.y = layout.bg.y;
     this.bgC.hitArea = new PIXI.Rectangle(0, 0, layout.bg.w, layout.bg.h);
-    this.spaceBackgroundSystem?.resize(layout.bg.w, layout.bg.h);
+    this.getSystem(SpaceBackgroundSystem)?.resize(layout.bg.w, layout.bg.h);
 
     // game
     this.gameC.x = layout.game.x; this.gameC.y = layout.game.y;
@@ -145,9 +142,8 @@ export class GameScene extends Scene {
   private initSpaceBackgroundSystem() {
     if (!this.bgC) return this;
 
-    this.spaceBackgroundSystem = new SpaceBackgroundSystem(this, this.bgC);
-    this.spaceBackgroundSystem.start();
-    
+    this.addSystem(new SpaceBackgroundSystem(this, this.bgC));
+
     logger.info('✅ SpaceBackgroundSystem инициализирована');
     return this;
   }

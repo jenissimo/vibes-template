@@ -1,6 +1,7 @@
 // engine/scene/Scene.ts
 import { GameObject } from "../GameObject";
 import { Component } from "../Component";
+import { System } from "../systems/System";
 import type { GameManagers } from "../types";
 
 export type UpdateStep = (deltaTime: number) => void;
@@ -10,6 +11,7 @@ export abstract class Scene {
   readonly preUpdateSteps: UpdateStep[] = [];
   readonly postUpdateSteps: UpdateStep[] = [];
   protected managers: GameManagers | null = null;
+  protected systems: System[] = [];
 
   initialize(managers: GameManagers) {
     this.managers = managers;
@@ -37,8 +39,33 @@ export abstract class Scene {
   onSuspend(): void {}
   onResume(): void {}
 
+  addSystem<T extends System>(system: T): T {
+    this.systems.push(system);
+    system.start();
+    return system;
+  }
+
+  removeSystem(system: System): void {
+    const idx = this.systems.indexOf(system);
+    if (idx >= 0) {
+      this.systems[idx] = this.systems[this.systems.length - 1];
+      this.systems.pop();
+      system.destroy();
+    }
+  }
+
+  getSystem<T extends System>(type: new (...args: any[]) => T): T | undefined {
+    return this.systems.find((s): s is T => s instanceof type);
+  }
+
+  protected destroyAllSystems(): void {
+    for (const s of this.systems) s.destroy();
+    this.systems.length = 0;
+  }
+
   update(deltaTime: number) {
     for (const step of this.preUpdateSteps) step(deltaTime);
+    for (const s of this.systems) s.update(deltaTime);
     for (const gameObject of this.gameObjects) gameObject.update(deltaTime);
     for (const step of this.postUpdateSteps) step(deltaTime);
   }

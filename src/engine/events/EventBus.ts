@@ -3,10 +3,15 @@
  * Позволяет системам общаться без прямых зависимостей
  */
 
+import { logger } from '../logging';
+import type { LayoutResult, Rect } from '../render/LayoutEngine';
+import type { AudioConfig } from '../audio/AudioTypes';
+import type { PlayerProfile } from '@/stores/game/profile';
+
 export type EventHandler<T = any> = (data: T) => void;
 
 export type EventHandlerWithOwner<T = any> = {
-  owner: any;
+  owner: object;
   handler: EventHandler<T>;
 };
 
@@ -40,21 +45,39 @@ export interface AppEvents {
   'gameui-ready': void;
   'app-ready': void;
   'pixi-resize': {
-    layout: any;
+    layout: LayoutResult;
     gameWidth: number;
     gameHeight: number;
     scale: number;
     scaleUI: number;
-    safe: any;
+    safe: Rect;
   };
-  
+
   // Аудио события движка
-  'audio-config-changed': { config: any };
-  
+  'audio-config-changed': { config: AudioConfig };
+
   // События профиля/настроек
-  'profile-changed': { profile: any };
+  'profile-changed': { profile: PlayerProfile };
   'profile-reset': void;
   'game-assets-loaded': void;
+
+  // Gesture события
+  'gesture-tap': { position: { x: number; y: number } };
+  'gesture-double-tap': { position: { x: number; y: number } };
+  'gesture-long-press': { position: { x: number; y: number } };
+  'gesture-swipe': {
+    direction: 'left' | 'right' | 'up' | 'down';
+    velocity: number;
+    distance: number;
+    startPosition: { x: number; y: number };
+    endPosition: { x: number; y: number };
+  };
+
+  // Игровые события (унифицированы из GameEventBus)
+  'mode-click': { modeId: string };
+  'add-credits': { amount: number };
+  'settings-open': void;
+  'settings-close': void;
 }
 
 export class EventBus {
@@ -91,8 +114,8 @@ export class EventBus {
    * Подписаться на событие с владельцем (для автоматической отписки)
    */
   public onWithOwner<K extends keyof AppEvents>(
-    owner: any, 
-    event: K, 
+    owner: object,
+    event: K,
     handler: EventHandler<AppEvents[K]>
   ): () => void {
     if (!this.handlersWithOwner.has(event)) {
@@ -119,7 +142,7 @@ export class EventBus {
         try {
           handler(data);
         } catch (error) {
-          console.error(`Error in event handler for ${event}:`, error);
+          logger.error(`Event handler failed`, error as Error, { event });
         }
       }
     }
@@ -131,7 +154,7 @@ export class EventBus {
         try {
           handler(data);
         } catch (error) {
-          console.error(`Error in event handler with owner for ${event}:`, error);
+          logger.error(`Event handler failed`, error as Error, { event });
         }
       }
     }
@@ -148,8 +171,8 @@ export class EventBus {
    * Отписаться от события по владельцу и обработчику
    */
   public offWithOwner<K extends keyof AppEvents>(
-    owner: any, 
-    event: K, 
+    owner: object,
+    event: K,
     handler: EventHandler<AppEvents[K]>
   ): void {
     const eventHandlers = this.handlersWithOwner.get(event);
@@ -177,7 +200,7 @@ export class EventBus {
   /**
    * Отписаться от всех событий владельца
    */
-  public offAllForOwner(owner: any): void {
+  public offAllForOwner(owner: object): void {
     for (const [, handlers] of this.handlersWithOwner) {
       for (const handlerWithOwner of handlers) {
         if (handlerWithOwner.owner === owner) {

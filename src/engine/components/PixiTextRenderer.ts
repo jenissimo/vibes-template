@@ -1,5 +1,6 @@
 // engine/components/PixiTextRenderer.ts
 import { Component } from '../Component';
+import { logger } from '../logging';
 import * as PIXI from 'pixi.js';
 import type { ITweenable } from './ITweenable';
 
@@ -252,21 +253,21 @@ export class PixiTextRenderer extends Component implements ITweenable {
    * Вызывает в dev для отладки tint/фильтров
    */
   traceVisualChain() {
-    const chain: any[] = [];
-    let cur: any = this.textSprite;
+    const chain: Record<string, unknown>[] = [];
+    let cur: PIXI.Container | null = this.textSprite;
     while (cur) {
       chain.push({
         type: cur.constructor?.name,
-        name: cur.name,
-        tint: cur.tint?.toString(16),
+        name: (cur as PIXI.Container & { name?: string }).name,
+        tint: 'tint' in cur ? (cur.tint as number)?.toString(16) : undefined,
         alpha: cur.alpha,
-        worldAlpha: cur.worldAlpha,
+        worldAlpha: (cur as unknown as Record<string, unknown>).worldAlpha,
         blendMode: cur.blendMode,
-        filters: cur.filters?.map((f: any) => f.constructor?.name),
+        filters: cur.filters?.map((f: PIXI.Filter) => f.constructor?.name),
       });
       cur = cur.parent;
     }
-    console.table(chain);
+    logger.debug('Visual chain', { chain });
     return chain;
   }
 

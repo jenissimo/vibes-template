@@ -110,7 +110,7 @@
   isOpen={visible}
   title="💥 Ошибка"
   size="lg"
-  on:close={dismiss}
+  onclose={dismiss}
 >
   {#if error}
     <div class="error-content">

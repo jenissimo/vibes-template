@@ -10,14 +10,14 @@ gsap.registerPlugin();
 
 type TargetSelector =
   | 'self' | 'transform' | 'renderer' | 'text'
-  | string                                 // имя класса компоненты, например 'PixiTextRenderer'
-  | (new (...args:any[]) => any)           // сам класс
-  | ((go: GameObject) => any)              // кастомная функция
-  | object;                                // уже найденный объект
+  | string                                           // имя класса компоненты
+  | (new (...args: unknown[]) => unknown)            // сам класс
+  | ((go: GameObject) => gsap.TweenTarget)           // кастомная функция
+  | object;                                          // уже найденный объект
 
 type Step =
-  | { kind: 'to'; sel: TargetSelector; vars: any; pos?: string | number }
-  | { kind: 'fromTo'; sel: TargetSelector; fromVars: any; toVars: any; pos?: string | number }
+  | { kind: 'to'; sel: TargetSelector; vars: gsap.TweenVars; pos?: string | number }
+  | { kind: 'fromTo'; sel: TargetSelector; fromVars: gsap.TweenVars; toVars: gsap.TweenVars; pos?: string | number }
   | { kind: 'call'; fn: () => void; pos?: string | number }
   | { kind: 'wait'; sec: number; pos?: string | number }
   | { kind: 'label'; name: string; pos?: string | number }
@@ -48,7 +48,7 @@ type Step =
 export class TweenComponent extends Component {
   private steps: Step[] = [];
   private currentSel: TargetSelector = 'self';
-  private tl?: any; // GSAPTimeline
+  private tl?: gsap.core.Timeline;
 
   constructor() {
     super();
@@ -61,13 +61,13 @@ export class TweenComponent extends Component {
   }
 
   /** GSAP-позиция опционально можно передать вторым аргументом (нап., "<", ">" или "+=0.2") */
-  to(vars: any, pos?: string | number) {
+  to(vars: gsap.TweenVars, pos?: string | number) {
     const normalizedVars = this.normalizeTransformVars(vars);
     this.steps.push({ kind: 'to', sel: this.currentSel, vars: normalizedVars, pos }); 
     return this;
   }
   
-  fromTo(fromVars: any, toVars: any, pos?: string | number) {
+  fromTo(fromVars: gsap.TweenVars, toVars: gsap.TweenVars, pos?: string | number) {
     const normalizedFromVars = this.normalizeTransformVars(fromVars);
     const normalizedToVars = this.normalizeTransformVars(toVars);
     this.steps.push({ kind: 'fromTo', sel: this.currentSel, fromVars: normalizedFromVars, toVars: normalizedToVars, pos }); 
@@ -204,73 +204,73 @@ export class TweenComponent extends Component {
   }
 
   // === Резолвер целей ===
-  private resolveTarget(sel: TargetSelector): any {
-    const go = this.gameObject as any;
+  // TweenComponent resolves targets dynamically from GameObjects/Components
+  // so runtime type-checking with casts to gsap.TweenTarget is necessary here
+  private resolveTarget(sel: TargetSelector): gsap.TweenTarget {
+    const go = this.gameObject;
 
     // явный объект
-    if (sel && typeof sel === 'object' && !('prototype' in (sel as any))) return sel;
+    if (sel && typeof sel === 'object' && !('prototype' in sel)) return sel as gsap.TweenTarget;
 
     // функция-селектор
-    if (typeof sel === 'function' && !('prototype' in sel)) return (sel as any)(go);
+    if (typeof sel === 'function' && !('prototype' in sel)) return (sel as (go: GameObject) => gsap.TweenTarget)(go);
 
     // псевдонимы
-    if (sel === 'self' || sel === 'transform') return go; // у GameObject должны быть x/y
+    if (sel === 'self' || sel === 'transform') return go as unknown as gsap.TweenTarget;
     if (sel === 'renderer' || sel === 'text') {
-      const r = this.findComponentByName(go, 'PixiTextRenderer');
-      return this.componentToDisplay(r) ?? go;
+      const r = this.findComponentByName('PixiTextRenderer');
+      return this.componentToDisplay(r) ?? (go as unknown as gsap.TweenTarget);
     }
 
     // класс компоненты
     if (typeof sel === 'function' && 'prototype' in sel) {
-      const c = go.get?.(sel) ?? this.findComponentByCtor(go, sel as any);
-      return this.componentToDisplay(c) ?? c ?? go;
+      const c = go.get(sel as new (...args: unknown[]) => Component)
+        ?? this.findComponentByName(sel.name);
+      return this.componentToDisplay(c) ?? (c as unknown as gsap.TweenTarget) ?? (go as unknown as gsap.TweenTarget);
     }
 
     // строка — имя класса компоненты
     if (typeof sel === 'string') {
-      const c = this.findComponentByName(go, sel);
-      return this.componentToDisplay(c) ?? c ?? go;
+      const c = this.findComponentByName(sel);
+      return this.componentToDisplay(c) ?? (c as unknown as gsap.TweenTarget) ?? (go as unknown as gsap.TweenTarget);
     }
 
-    return go;
+    return go as unknown as gsap.TweenTarget;
   }
 
-  private componentToDisplay(comp: any) {
+  private componentToDisplay(comp: unknown): gsap.TweenTarget | null {
     // Проверяем, является ли компонент ITweenable
     if (this.isTweenable(comp)) {
-      return comp;
+      return comp as gsap.TweenTarget;
     }
-    
+
     // Проверяем, является ли компонент наследником PixiSpriteRenderer
     if (this.isPixiSpriteRenderer(comp)) {
-      return comp.sprite;
+      return (comp as Record<string, unknown>).sprite as gsap.TweenTarget;
     }
-    
+
     // Универсальная проверка - ищем любой display объект
-    return comp?.container ?? comp?.displayObject ?? comp?.view ?? comp?.textSprite ?? comp?.sprite ?? null;
+    if (!comp || typeof comp !== 'object') return null;
+    const obj = comp as Record<string, unknown>;
+    return (obj.container ?? obj.displayObject ?? obj.view ?? obj.textSprite ?? obj.sprite ?? null) as gsap.TweenTarget | null;
   }
 
-  private findComponentByName(go: any, name: string) {
-    const arr: any[] = go?.getComponents?.() ?? go?.components ?? go?._components ?? [];
-    return arr.find(c => (c?.constructor?.name === name)) ?? null;
-  }
-  
-  private findComponentByCtor(go: any, ctor: any) {
-    const arr: any[] = go?.getComponents?.() ?? go?.components ?? go?._components ?? [];
-    return arr.find(c => c instanceof ctor) ?? null;
+  private findComponentByName(name: string): Component | undefined {
+    return this.gameObject.getComponents().find(c => c.constructor.name === name);
   }
 
   /**
    * Проверяет, является ли компонент ITweenable
    */
-  private isTweenable(comp: any): boolean {
+  private isTweenable(comp: unknown): boolean {
     if (!comp || typeof comp !== 'object') return false;
     
     // Проверяем наличие стандартных свойств ITweenable
     const tweenableProps = ['alpha', 'scale', 'rotation', 'x', 'y'];
-    return tweenableProps.every(prop => 
-      typeof comp[prop] === 'number' || 
-      (typeof comp[prop] === 'object' && comp[prop] !== null)
+    const obj = comp as Record<string, unknown>;
+    return tweenableProps.every(prop =>
+      typeof obj[prop] === 'number' ||
+      (typeof obj[prop] === 'object' && obj[prop] !== null)
     );
   }
 
@@ -278,18 +278,19 @@ export class TweenComponent extends Component {
    * Проверяет, является ли компонент наследником PixiSpriteRenderer
    * Использует проверку на наличие свойства sprite и методов PixiSpriteRenderer
    */
-  private isPixiSpriteRenderer(comp: any): boolean {
+  private isPixiSpriteRenderer(comp: unknown): boolean {
     if (!comp || typeof comp !== 'object') return false;
-    
+    const obj = comp as Record<string, unknown>;
+
     // Проверяем наличие sprite (основное свойство PixiSpriteRenderer)
-    if (!comp.sprite) return false;
-    
+    if (!obj.sprite) return false;
+
     // Проверяем наличие ключевых методов PixiSpriteRenderer
     const requiredMethods = ['setAlpha', 'setTint', 'setVisible', 'setOffset'];
-    const hasRequiredMethods = requiredMethods.every(method => 
-      typeof comp[method] === 'function'
+    const hasRequiredMethods = requiredMethods.every(method =>
+      typeof obj[method] === 'function'
     );
-    
+
     return hasRequiredMethods;
   }
 
@@ -297,7 +298,7 @@ export class TweenComponent extends Component {
    * Нормализует свойства трансформации для GSAP
    * Конвертирует scaleX/scaleY в scale или scaleX/scaleY в правильном формате
    */
-  private normalizeTransformVars(vars: any): any {
+  private normalizeTransformVars(vars: gsap.TweenVars): gsap.TweenVars {
     if (!vars || typeof vars !== 'object') return vars;
 
     const normalized = { ...vars };

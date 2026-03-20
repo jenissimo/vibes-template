@@ -5,29 +5,30 @@
   import { ServiceRegistry, ServiceKeys } from '@engine/registry/ServiceRegistry';
   import Icon from '@ui/base/Icon.svelte';
   
-  let buttonElement: HTMLElement;
-  let isVisible = false;
-  let isRecording = false;
-  let recordingTime = 0;
-  let recordingInterval: NodeJS.Timeout | null = null;
-  let fps = 0;
-  let fpsUpdateInterval: NodeJS.Timeout | null = null;
-  
-  // Подписываемся на изменения состояния записи
-  $: isRecording = spectorDebugger.isRecording();
+  let buttonElement = $state<HTMLElement>(undefined!);
+  let isVisible = $state(false);
+  let isRecording = $state(false);
+  let recordingTime = $state(0);
+  let recordingInterval: ReturnType<typeof setInterval> | null = null;
+  let fps = $state(0);
+  let fpsUpdateInterval: ReturnType<typeof setInterval> | null = null;
+  let startDelay: ReturnType<typeof setTimeout> | null = null;
 
-  let startDelay: NodeJS.Timeout | null = null;
-  
-  // Таймер записи
-  $: if (isRecording && !recordingInterval) {
-    recordingTime = 0;
-    recordingInterval = setInterval(() => {
-      recordingTime++;
-    }, 1000);
-  } else if (!isRecording && recordingInterval) {
-    clearInterval(recordingInterval);
-    recordingInterval = null;
-  }
+  $effect(() => {
+    isRecording = spectorDebugger.isRecording();
+  });
+
+  $effect(() => {
+    if (isRecording && !recordingInterval) {
+      recordingTime = 0;
+      recordingInterval = setInterval(() => {
+        recordingTime++;
+      }, 1000);
+    } else if (!isRecording && recordingInterval) {
+      clearInterval(recordingInterval);
+      recordingInterval = null;
+    }
+  });
   
   onMount(() => {
     if (buttonElement) {
@@ -127,7 +128,7 @@
     bind:this={buttonElement}
     class="spector-toggle-btn"
     class:recording={isRecording}
-    on:click={togglePanel}
+    onclick={togglePanel}
     aria-label="Toggle Spector Debug Panel"
   >
     <Icon 
@@ -151,7 +152,7 @@
   <div class="spector-panel">
     <div class="panel-header">
       <h3>WebGL Debug</h3>
-      <button class="close-btn" on:click={togglePanel}>×</button>
+      <button class="close-btn" onclick={togglePanel}>×</button>
     </div>
     
     <div class="panel-content">
@@ -176,14 +177,14 @@
         <button 
           class="control-btn primary"
           class:recording={isRecording}
-          on:click={toggleRecording}
+          onclick={toggleRecording}
         >
           {isRecording ? 'Stop Recording' : 'Start Recording'}
         </button>
         
         <button 
           class="control-btn secondary"
-          on:click={captureFrame}
+          onclick={captureFrame}
           disabled={isRecording}
         >
           Capture Frame

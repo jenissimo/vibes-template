@@ -1,27 +1,39 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  
-  export let variant: 'primary' | 'secondary' | 'danger' | 'success' = 'primary';
-  export let disabled: boolean = false;
-  export let size: 'sm' | 'md' | 'lg' = 'md';
-  export let fullWidth: boolean = false;
-  export let type: 'button' | 'submit' | 'reset' = 'button';
-  
-  const dispatch = createEventDispatcher();
-  
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    variant?: 'primary' | 'secondary' | 'danger' | 'success';
+    disabled?: boolean;
+    size?: 'sm' | 'md' | 'lg';
+    fullWidth?: boolean;
+    type?: 'button' | 'submit' | 'reset';
+    onclick?: (event: MouseEvent) => void;
+    children?: Snippet;
+  }
+
+  const {
+    variant = 'primary',
+    disabled = false,
+    size = 'md',
+    fullWidth = false,
+    type = 'button',
+    onclick,
+    children
+  }: Props = $props();
+
   function handleClick(event: MouseEvent) {
     if (!disabled) {
-      dispatch('click', event);
+      onclick?.(event);
     }
   }
-  
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter' && !disabled) {
-      dispatch('click', event as any);
+      onclick?.(event as unknown as MouseEvent);
     }
   }
-  
-  $: buttonClasses = [
+
+  const buttonClasses = $derived([
     'cursor-pointer',
     'btn',
     `btn-${variant}`,
@@ -29,17 +41,19 @@
     fullWidth ? 'w-full' : '',
     size === 'sm' ? 'px-2 py-1 text-xs' : '',
     size === 'lg' ? 'px-4 py-3 text-base' : ''
-  ].filter(Boolean).join(' ');
+  ].filter(Boolean).join(' '));
 </script>
 
 <button
   {type}
   class={buttonClasses}
   {disabled}
-  on:click={handleClick}
-  on:keydown={handleKeydown}
+  onclick={handleClick}
+  onkeydown={handleKeydown}
 >
-  <slot />
+  {#if children}
+    {@render children()}
+  {/if}
 </button>
 
 <style>

@@ -2,6 +2,7 @@
 import { Component } from '../Component';
 import * as PIXI from 'pixi.js';
 import type { ITweenable } from './ITweenable';
+import { logger } from '../logging';
 
 export interface IconTextConfig {
   iconTexture?: PIXI.Texture;
@@ -148,7 +149,7 @@ export class IconTextRenderer extends Component implements ITweenable {
       this.textSprite.anchor.set(0, 0.5);   // Левая сторона текста по X, центр по Y
       
       // Отладочная информация
-      console.log(`IconTextRenderer layout: iconSize=${iconSize}, spacing=${spacing}, iconX=${this.iconSprite.x}, textX=${this.textSprite.x}, textAnchor=${this.textSprite.anchor.x}`);
+      logger.debug(`IconTextRenderer layout: iconSize=${iconSize}, spacing=${spacing}, iconX=${this.iconSprite.x}, textX=${this.textSprite.x}, textAnchor=${this.textSprite.anchor.x}`);
     } else {
       // Вертикальное размещение: [иконка] сверху, [текст] снизу
       this.iconSprite.x = 0;

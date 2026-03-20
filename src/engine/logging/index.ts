@@ -93,10 +93,11 @@ function installGlobalErrorHandlers(log: Logger) {
 // 5. Полезные утилиты и декораторы
 
 /** Декоратор для автоматического замера времени выполнения метода */
-export function timed(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+export function timed(target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
-  descriptor.value = function (...args: any[]) {
-    const FQN = `${target.constructor.name}.${propertyName}`;
+  descriptor.value = function (...args: unknown[]) {
+    const className = (target as object).constructor?.name ?? 'Unknown';
+    const FQN = `${className}.${propertyName}`;
     logger.time(FQN);
     try {
       const result = originalMethod.apply(this, args);

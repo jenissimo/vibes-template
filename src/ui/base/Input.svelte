@@ -1,13 +1,26 @@
 <!-- Input Component -->
 <script lang="ts">
-  export let value: string | number = '';
-  export let type: 'text' | 'number' | 'email' | 'password' = 'text';
-  export let placeholder: string = '';
-  export let disabled: boolean = false;
-  export let step: number | string | undefined = undefined;
-  export let id: string | undefined = undefined;
-  export let extraClass: string = '';
-  export let onChange: (value: number | string) => void = () => undefined;
+  interface Props {
+    value?: string | number;
+    type?: 'text' | 'number' | 'email' | 'password';
+    placeholder?: string;
+    disabled?: boolean;
+    step?: number | string;
+    id?: string;
+    extraClass?: string;
+    onChange?: (value: number | string) => void;
+  }
+
+  let {
+    value = $bindable(''),
+    type = 'text',
+    placeholder = '',
+    disabled = false,
+    step = undefined,
+    id = undefined,
+    extraClass = '',
+    onChange = () => undefined
+  }: Props = $props();
 
   function handleInput(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -18,14 +31,14 @@
 </script>
 
 <input
-  id={id}
+  {id}
   {type}
   {placeholder}
   {disabled}
   {step}
   bind:value
-  on:input={handleInput}
+  oninput={handleInput}
   class={`input w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400
          focus:outline-none focus:ring-2 focus:ring-neon-purple/50 focus:border-neon-purple
          disabled:opacity-50 disabled:cursor-not-allowed ${extraClass}`}
-/> 
+/>

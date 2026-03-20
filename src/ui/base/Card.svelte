@@ -1,15 +1,29 @@
 <script lang="ts">
-  export let title: string = '';
-  export let subtitle: string = '';
-  export let description: string = '';
-  export let hoverable: boolean = true;
-  export let className: string = '';
-  
-  $: cardClasses = [
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    title?: string;
+    subtitle?: string;
+    description?: string;
+    hoverable?: boolean;
+    className?: string;
+    children?: Snippet;
+  }
+
+  const {
+    title = '',
+    subtitle = '',
+    description = '',
+    hoverable = true,
+    className = '',
+    children
+  }: Props = $props();
+
+  const cardClasses = $derived([
     'card',
     !hoverable ? 'hover:border-neon-blue/30 hover:shadow-none' : '',
     className
-  ].filter(Boolean).join(' ');
+  ].filter(Boolean).join(' '));
 </script>
 
 <div class={cardClasses}>
@@ -23,19 +37,21 @@
       {/if}
     </div>
   {/if}
-  
+
   {#if description}
     <p class="card-description">{description}</p>
   {/if}
-  
+
   <div class="card-content">
-    <slot />
+    {#if children}
+      {@render children()}
+    {/if}
   </div>
 </div>
 
 <style lang="postcss">
   @reference "@/styles/theme.css";
-  
+
   .card-content {
     @apply flex flex-col gap-2;
   }

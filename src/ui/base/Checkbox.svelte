@@ -1,10 +1,24 @@
 <!-- Checkbox Component -->
 <script lang="ts">
-  export let checked: boolean = false;
-  export let disabled: boolean = false;
-  export let id: string | undefined = undefined;
-  export let extraClass: string = '';
-  export let onChange: (checked: boolean) => void = () => undefined;
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    checked?: boolean;
+    disabled?: boolean;
+    id?: string;
+    extraClass?: string;
+    onChange?: (checked: boolean) => void;
+    children?: Snippet;
+  }
+
+  let {
+    checked = $bindable(false),
+    disabled = false,
+    id = undefined,
+    extraClass = '',
+    onChange = () => undefined,
+    children
+  }: Props = $props();
 
   function handleChange(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -16,13 +30,15 @@
 <label class={`checkbox-container flex items-center gap-2 cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${extraClass}`} for={id}>
   <input
     type="checkbox"
-    id={id}
+    {id}
     {checked}
     {disabled}
-    on:change={handleChange}
-    class="w-4 h-4 text-neон-purple bg-gray-700 border-gray-600 rounded focus:ring-neon-purple/50 focus:ring-2"
+    onchange={handleChange}
+    class="w-4 h-4 text-neon-purple bg-gray-700 border-gray-600 rounded focus:ring-neon-purple/50 focus:ring-2"
   />
   <span class="text-sm text-gray-300">
-    <slot />
+    {#if children}
+      {@render children()}
+    {/if}
   </span>
 </label>

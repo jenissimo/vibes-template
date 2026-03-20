@@ -68,7 +68,7 @@ export const profileActions = {
    * Reset profile to defaults
    */
   resetProfile(): void {
-    console.info('🔄 Resetting profile to defaults');
+    logger.info('🔄 Resetting profile to defaults');
     
     profileStore.set(DEFAULT_PROFILE);
     

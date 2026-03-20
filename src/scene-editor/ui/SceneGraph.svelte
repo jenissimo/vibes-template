@@ -6,10 +6,9 @@
   import Icon from '@/ui/base/Icon.svelte';
   import { nanoid } from 'nanoid';
 
-  let expandedNodes = new Set<string>();
-  
-  // Реактивная переменная для корневых объектов
-  $: rootObjects = Object.values($sceneState.objects).filter(obj => !obj.parent);
+  let expandedNodes = $state(new Set<string>());
+
+  const rootObjects = $derived(Object.values($sceneState.objects).filter(obj => !obj.parent));
 
   function toggleNode(nodeId: string) {
     if (expandedNodes.has(nodeId)) {
@@ -58,7 +57,7 @@
         <Button
           variant="secondary"
           size="sm"
-          on:click={() => handleAddPrefab(prefab.id)}
+          onclick={() => handleAddPrefab(prefab.id)}
         >
           <Icon name={prefab.icon} size="sm" />
           {prefab.name}
@@ -81,7 +80,7 @@
               <button
                 type="button"
                 class="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-white"
-                on:click={() => toggleNode(node.object.id)}
+                onclick={() => toggleNode(node.object.id)}
                 aria-expanded={node.isExpanded}
                 aria-label={node.isExpanded ? 'Collapse' : 'Expand'}
               >
@@ -95,7 +94,7 @@
               type="button"
               class="flex-1 flex items-center gap-2 p-2 rounded transition-colors text-left
                      {node.isSelected ? 'bg-neon-purple/20 text-neon-purple' : 'hover:bg-gray-700/50'}"
-              on:click={() => handleObjectSelect(node.object.id)}
+              onclick={() => handleObjectSelect(node.object.id)}
             >
               <Icon name={node.object.type === 'sprite' ? 'sprite' : 'space-bg'} size="sm" />
               <span class="text-sm flex-1 truncate">{node.object.name}</span>
@@ -117,7 +116,7 @@
                   type="button"
                   class="w-full flex items-center gap-2 p-2 rounded transition-colors text-left
                          {childNode.isSelected ? 'bg-neon-purple/20 text-neon-purple' : 'hover:bg-gray-700/50'}"
-                  on:click={() => handleObjectSelect(childNode.object.id)}
+                  onclick={() => handleObjectSelect(childNode.object.id)}
                 >
                   <div class="w-4"></div>
                   <Icon name={childNode.object.type === 'sprite' ? 'sprite' : 'space-bg'} size="sm" />

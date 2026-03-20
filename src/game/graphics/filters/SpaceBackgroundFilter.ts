@@ -282,8 +282,10 @@ export class SpaceBackgroundFilter extends Filter {
   }
 
   // ——— Ticker ———
+  private static readonly TIME_PERIOD = 10000;
+
   public update(deltaSeconds: number): void {
-    this._time += deltaSeconds;
+    this._time = (this._time + deltaSeconds) % SpaceBackgroundFilter.TIME_PERIOD;
     this.resources.space.uniforms.uTime = this._time;
   }
 

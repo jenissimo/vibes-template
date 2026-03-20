@@ -1,5 +1,6 @@
 <script lang="ts">
   import { animations } from '@/utils/animations';
+  import { logger } from '@/engine/logging';
   import Icon from '@ui/base/Icon.svelte';
   
   // Template state - простые булевы значения для демонстрации
@@ -51,7 +52,7 @@
   
   function handleModeClick(modeId: string) {
     // Template function - просто логируем
-    console.log('🎮 Mode clicked:', modeId);
+    logger.debug('Mode clicked', { modeId });
   }
   
   function animateButton(event: MouseEvent) {

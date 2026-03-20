@@ -1,7 +1,13 @@
 // engine/scene/SceneManager.ts
 import { Scene } from "./Scene";
+import type { GameManagers } from "../types";
 
 export class SceneManagerInstance {
+  private static instance: SceneManagerInstance;
+  static getInstance(): SceneManagerInstance {
+    return (SceneManagerInstance.instance ??= new SceneManagerInstance());
+  }
+
   private sceneStack: Scene[] = [];
   
   get current() {
@@ -19,7 +25,7 @@ export class SceneManagerInstance {
    * Горячая замена сцены для HMR
    * Корректно отписывает старую сцену и инициализирует новую
    */
-  replace(newScene: Scene, managers?: any) {
+  replace(newScene: Scene, managers?: GameManagers) {
     const previousScene = this.current;
     
     if (previousScene) {
@@ -62,5 +68,6 @@ export class SceneManagerInstance {
   }
 }
 
-let sceneManagerInstance: SceneManagerInstance | null = null;
-export const SceneManager = () => (sceneManagerInstance ??= new SceneManagerInstance());
+export const sceneManager = SceneManagerInstance.getInstance();
+/** @deprecated Use `sceneManager` instead */
+export const SceneManager = () => sceneManager;

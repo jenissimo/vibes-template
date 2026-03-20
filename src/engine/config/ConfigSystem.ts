@@ -1,7 +1,7 @@
 /**
  * Core Configuration System
  * Абстрактная система конфигов для геймдева
- * 
+ *
  * Архитектура:
  * - Data Tables (как в Unity Scriptable Objects)
  * - Config Manager для управления
@@ -9,6 +9,8 @@
  * - Валидация данных
  * - Кэширование для производительности
  */
+
+import { logger } from '@/engine/logging';
 
 // Простой EventEmitter для браузера
 class EventEmitter {
@@ -22,7 +24,7 @@ class EventEmitter {
     return this;
   }
 
-  emit(event: string, ...args: any[]): boolean {
+  emit(event: string, ...args: unknown[]): boolean {
     const eventListeners = this.listeners.get(event);
     if (!eventListeners || eventListeners.length === 0) {
       return false;
@@ -32,7 +34,7 @@ class EventEmitter {
       try {
         listener(...args);
       } catch (error) {
-        console.error(`Error in event listener for '${event}':`, error);
+        logger.error(`Error in event listener for '${event}'`, error as Error);
       }
     });
     
@@ -69,8 +71,8 @@ export interface IGameConfig {
 export class ConfigManager extends EventEmitter {
   private static instance: ConfigManager;
   private configs = new Map<string, IGameConfig>();
-  private cache = new Map<string, any>();
-  private validators = new Map<string, (data: any) => boolean>();
+  private cache = new Map<string, unknown>();
+  private validators = new Map<string, (data: unknown) => boolean>();
 
   private constructor() {
     super();
@@ -94,7 +96,7 @@ export class ConfigManager extends EventEmitter {
   get<T extends IGameConfig>(id: string): T | null {
     // Проверяем кэш
     if (this.cache.has(id)) {
-      return this.cache.get(id);
+      return this.cache.get(id) as T;
     }
 
     const config = this.configs.get(id) as T;
@@ -112,14 +114,14 @@ export class ConfigManager extends EventEmitter {
   }
 
   // Валидация конфига
-  validate(id: string, data: any): boolean {
+  validate(id: string, data: unknown): boolean {
     const validator = this.validators.get(id);
     if (!validator) return true;
     return validator(data);
   }
 
   // Регистрация валидатора
-  registerValidator(id: string, validator: (data: any) => boolean): void {
+  registerValidator(id: string, validator: (data: unknown) => boolean): void {
     this.validators.set(id, validator);
   }
 

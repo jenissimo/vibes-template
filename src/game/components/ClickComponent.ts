@@ -4,13 +4,14 @@ import { ServiceRegistry, ServiceKeys } from '@/engine/registry';
 import { logger } from '@/engine/logging';
 import * as PIXI from 'pixi.js';
 import { EffectSystem, GameObject, IconTextRenderer, TweenComponent } from '@/engine';
-import { GameEventBus } from '../events/GameEventBus';
+import { eventBus } from '@/engine/events/EventBus';
 
 export class ClickComponent extends Component {
   private spriteComponent: PixiSpriteRenderer | null = null;
   private currencyAmount: number;
   private currencyTexture: PIXI.Texture | null = null;
   private effectSystem: EffectSystem;
+  private readonly boundHandleClick = this.handleClick.bind(this);
 
   constructor(currencyAmount: number, effectSystem: EffectSystem) {
     super();
@@ -20,9 +21,9 @@ export class ClickComponent extends Component {
 
   onAdded(): void {
     this.spriteComponent = this.gameObject.get(PixiSpriteRenderer) ?? null;
-    
+
     if (!this.spriteComponent) {
-      logger.warn('ClickComponent: PixiSpriteRenderer or SVGSpriteComponent not found on GameObject', { 
+      logger.warn('ClickComponent: PixiSpriteRenderer not found on GameObject', {
         source: 'game',
         gameObjectId: this.gameObject?.id,
         components: this.gameObject.getComponents().map(c => c.constructor.name)
@@ -39,28 +40,22 @@ export class ClickComponent extends Component {
   }
 
   private async loadCurrencyTexture(): Promise<void> {
-    const assetManager = ServiceRegistry.get(ServiceKeys.AssetManager) as any;
-    this.currencyTexture = await assetManager?.loader?.loadTexture('item-credit');
+    const assetManager = ServiceRegistry.get<{ loader?: { loadTexture(id: string): Promise<PIXI.Texture> } }>(ServiceKeys.AssetManager);
+    this.currencyTexture = (await assetManager?.loader?.loadTexture('item-credit')) ?? null;
   }
-  
+
   private setupInteraction(): void {
     if (!this.spriteComponent) return;
 
-    // Enable interaction on the sprite
     this.spriteComponent.sprite.interactive = true;
     this.spriteComponent.sprite.cursor = 'pointer';
-
-    // Subscribe to click events
-    this.spriteComponent.sprite.on('pointerdown', this.handleClick.bind(this));
+    this.spriteComponent.sprite.on('pointerdown', this.boundHandleClick);
   }
 
   private cleanupInteraction(): void {
     if (!this.spriteComponent) return;
 
-    // Remove event listeners
-    this.spriteComponent.sprite.off('pointerdown', this.handleClick.bind(this));
-    
-    // Disable interaction
+    this.spriteComponent.sprite.off('pointerdown', this.boundHandleClick);
     this.spriteComponent.sprite.interactive = false;
     this.spriteComponent.sprite.cursor = 'default';
   }
@@ -69,7 +64,7 @@ export class ClickComponent extends Component {
     if (!this.gameObject.scene) return;
 
     // Emit event to add credits
-    GameEventBus.getInstance().emit('add-credits', { amount: this.currencyAmount });
+    eventBus.emit('add-credits', { amount: this.currencyAmount });
 
     // Add floating text
     this.gameObject.scene.add(
