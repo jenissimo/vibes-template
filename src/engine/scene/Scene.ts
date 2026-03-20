@@ -70,6 +70,17 @@ export abstract class Scene {
     this.systems.length = 0;
   }
 
+  /**
+   * Public cleanup: destroys all systems (if scene forgot to) and clears componentIndex.
+   * Called by SceneManager after onExit() as a defensive safety net.
+   */
+  destroy(): void {
+    if (this.systems.length > 0) {
+      this.destroyAllSystems();
+    }
+    this.componentIndex.clear();
+  }
+
   update(deltaTime: number) {
     for (const step of this.preUpdateSteps) step(deltaTime);
     for (const s of this.systems) s.update(deltaTime);

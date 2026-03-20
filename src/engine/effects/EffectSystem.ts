@@ -284,54 +284,58 @@ export class EffectSystem {
    */
   reloadShaders(): void {
     logger.info('♻️ Reloading shaders for HMR...', { source: 'effects' });
-    
+
     let reloadedCount = 0;
-    
-    // Рекурсивно обходим все контейнеры и спрайты
+
+    // Recursively traverse containers, reloading filters on any Container (not just Sprites)
     const processContainer = (container: PIXI.Container) => {
-      for (const child of container.children) {
-        if (child instanceof PIXI.Sprite && child.filters) {
-          // Пересоздаем фильтры для каждого спрайта
-          const newFilters: PIXI.Filter[] = [];
-          
-          for (const filter of child.filters) {
-            try {
-              // HMR: если у фильтра есть метод getReloadParams, пересоздаём его
-              if ('getReloadParams' in filter && typeof (filter as any).getReloadParams === 'function') {
-                const params = (filter as any).getReloadParams();
-                const NewFilter = (filter.constructor as any);
-                newFilters.push(new NewFilter(params));
-                reloadedCount++;
-              } else {
-                // Для остальных фильтров (встроенных, etc) — оставляем как есть
-                newFilters.push(filter);
-              }
-            } catch (error) {
-              logger.warn('⚠️ Failed to reload filter', { 
-                filterType: filter.constructor.name, 
-                error: error instanceof Error ? error.message : String(error),
-                source: 'effects' 
-              });
-              // Оставляем старый фильтр в случае ошибки
+      // Check filters on the container itself
+      if (container.filters) {
+        const newFilters: PIXI.Filter[] = [];
+
+        for (const filter of container.filters) {
+          try {
+            if ('getReloadParams' in filter && typeof (filter as any).getReloadParams === 'function') {
+              const params = (filter as any).getReloadParams();
+              const NewFilter = (filter.constructor as any);
+              newFilters.push(new NewFilter(params));
+              reloadedCount++;
+            } else {
               newFilters.push(filter);
             }
+          } catch (error) {
+            logger.warn('⚠️ Failed to reload filter', {
+              filterType: filter.constructor.name,
+              error: error instanceof Error ? error.message : String(error),
+              source: 'effects'
+            });
+            newFilters.push(filter);
           }
-          
-          // Применяем новые фильтры
-          child.filters = newFilters;
         }
-        
-        // Рекурсивно обрабатываем дочерние контейнеры
+
+        container.filters = newFilters;
+      }
+
+      // Recurse into children
+      for (const child of container.children) {
         if (child instanceof PIXI.Container) {
           processContainer(child);
         }
       }
     };
-    
-    // Обрабатываем основной контейнер
-    processContainer(this.camera);
-    
+
+    // Traverse from the stage root (via PixiApp) to cover all containers
+    const root = this.getStageRoot();
+    processContainer(root);
+
     logger.info(`✅ Reloaded ${reloadedCount} shaders`, { source: 'effects' });
+  }
+
+  private getStageRoot(): PIXI.Container {
+    if (ServiceRegistry.has(ServiceKeys.PixiApp)) {
+      return ServiceRegistry.get<PIXI.Application>(ServiceKeys.PixiApp).stage;
+    }
+    return this.camera;
   }
 
   private resolveRenderer(explicit?: PIXI.Renderer): PIXI.Renderer {

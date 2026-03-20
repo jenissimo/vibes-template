@@ -51,6 +51,11 @@ export class ServiceRegistry {
     this.services.delete(key);
   }
 
+  /** Remove a service from the registry without disposing it. */
+  static remove(key: string): void {
+    this.services.delete(key);
+  }
+
   static clear(): void {
     for (const [, service] of this.services) {
       runDispose(service);

@@ -52,7 +52,8 @@ if (import.meta.hot) {
     gameBootstrap.teardown();
     svelteApp?.$destroy?.() || svelteApp?.destroy?.();
     svelteApp = null;
-    setTimeout(() => void bootstrap(), 100);
+    bootstrapPromise = null;
+    void bootstrap();
   });
 }
 

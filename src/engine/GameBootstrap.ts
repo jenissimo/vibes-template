@@ -11,6 +11,7 @@ import { domEventBridge } from '@/engine/events/DOMEventBridge';
 import { eventBus } from '@/engine/events/EventBus';
 import { panelPositioningService } from '@/engine/ui';
 import { InputManager } from '@/engine/input/InputManager';
+import { CoordinateService } from '@/engine/coordinates/CoordinateService';
 import { PreGameLoader } from './PreGameLoader';
 import { settingsInitService } from '@/stores/game';
 import { appMode } from '@/stores/ui/appState';
@@ -110,9 +111,16 @@ export class GameBootstrap {
       }
     };
 
-    safe('game.destroy', () => { this.game?.destroy(); this.game = null; });
+    safe('game.destroy', () => {
+      this.game?.destroy();
+      this.game = null;
+      // Remove from registry without re-disposing (already destroyed)
+      ServiceRegistry.remove('Game');
+      ServiceRegistry.remove('SceneManager');
+    });
     safe('domEventBridge.destroy', () => domEventBridge.destroy());
     safe('InputManager.resetInstance', () => InputManager.resetInstance());
+    safe('CoordinateService.clearLayout', () => CoordinateService.getInstance().clearLayout());
     safe('eventBus.clear', () => eventBus.clear());
     safe('ServiceRegistry.clear', () => ServiceRegistry.clear());
     safe('PreGameLoader.resetInstance', () => PreGameLoader.resetInstance());

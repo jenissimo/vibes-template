@@ -31,12 +31,15 @@ export class SceneManagerInstance {
     if (previousScene) {
       // 1. Отписываем старую сцену
       previousScene.onExit(newScene);
-      
+
       // 2. Очищаем все GameObject'ы из старой сцены
       for (const gameObject of previousScene.gameObjects) {
         gameObject._onRemovedFromScene();
       }
       previousScene.gameObjects.length = 0;
+
+      // 3. Defensive: destroy remaining systems & componentIndex if scene forgot
+      previousScene.destroy();
     }
     
     // 3. Инициализируем новую сцену с менеджерами

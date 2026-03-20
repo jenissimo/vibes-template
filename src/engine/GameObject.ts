@@ -107,11 +107,20 @@ export class GameObject {
     if (this.componentIndex.has(ComponentClass)) {
       return true;
     }
-    
-    // Slow path for inherited classes
+
+    // Slow path for inherited classes (also handles HMR where instanceof may fail
+    // due to stale module references — fall back to constructor name comparison)
     for (const comp of this.components) {
       if (comp instanceof ComponentClass) {
         return true;
+      }
+      // HMR fallback: compare constructor names up the prototype chain
+      let proto = Object.getPrototypeOf(comp);
+      while (proto && proto.constructor !== Object) {
+        if (proto.constructor.name === ComponentClass.name) {
+          return true;
+        }
+        proto = Object.getPrototypeOf(proto);
       }
     }
 
