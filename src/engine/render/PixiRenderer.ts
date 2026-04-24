@@ -28,6 +28,15 @@ export class PixiRenderer {
 
   // сохраняем ссылку для корректной отписки
   private onWinResize = () => this.handleResize();
+  private onContextLost = (e: Event) => {
+    e.preventDefault();
+    logger.warn('WebGL context lost', { source: 'game' });
+    eventBus.emit('webgl-context-lost');
+  };
+  private onContextRestored = () => {
+    logger.info('WebGL context restored', { source: 'game' });
+    eventBus.emit('webgl-context-restored');
+  };
 
   constructor(private config: PixiConfig = {}) {}
 
@@ -81,6 +90,8 @@ export class PixiRenderer {
 
     // подписки
     eventBus.on('window-resize', this.onWinResize);
+    this.canvas.addEventListener('webglcontextlost', this.onContextLost);
+    this.canvas.addEventListener('webglcontextrestored', this.onContextRestored);
 
     // первичный layout (используем размеры app.screen, они уже синхронизированы с canvas)
     this.handleResize();
@@ -194,6 +205,8 @@ export class PixiRenderer {
 
   public destroy(): void {
     eventBus.off('window-resize', this.onWinResize);  // та же ссылка!
+    this.canvas?.removeEventListener('webglcontextlost', this.onContextLost);
+    this.canvas?.removeEventListener('webglcontextrestored', this.onContextRestored);
     this.debugOverlay?.remove();
     this.app?.destroy(false);
     ServiceRegistry.unregister(ServiceKeys.PixiApp);

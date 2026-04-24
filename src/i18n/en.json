@@ -1,0 +1,17 @@
+{
+  "common.ok": "OK",
+  "common.cancel": "Cancel",
+  "common.close": "Close",
+  "common.back": "Back",
+  "common.continue": "Continue",
+  "common.retry": "Retry",
+  "common.loading": "Loading…",
+
+  "settings.title": "Settings",
+  "settings.language": "Language",
+  "settings.language.system": "System",
+  "settings.music": "Music",
+  "settings.sfx": "Sound effects",
+
+  "example.itemsCount": "You have [count] [count|item|items]"
+}

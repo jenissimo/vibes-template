@@ -75,4 +75,9 @@ export const enum ServiceKeys {
   RemoteDebug = 'remoteDebug',
   AssetLoader = 'assetLoader',
   AssetManager = 'assetManager',
+  AdService = 'adService',
+  MonetizationService = 'monetizationService',
+  NotificationService = 'notificationService',
+  IAPService = 'iapService',
+  I18nService = 'i18nService',
 }

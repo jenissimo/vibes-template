@@ -8,7 +8,7 @@ import { LayerManager, LAYER_DEPTHS } from '@/engine/render/LayerManager';
 
 export class EffectSystem {
   requiredComponents = [];
-  private particleSystem!: ParticleSystem;
+  private particleSystem: ParticleSystem | null = null;
   private screenShakeIntensity: number = 0;
   private screenShakeDuration: number = 0;
   private camera: PIXI.Container;
@@ -31,6 +31,11 @@ export class EffectSystem {
    * Устанавливает новый контейнер для эффектов
    */
   setContainer(newContainer: PIXI.Container, layerManager?: LayerManager): void {
+    // Reset screen shake so stale offsets don't carry over to new container
+    this.screenShakeIntensity = 0;
+    this.screenShakeDuration = 0;
+    this.currentShakeOffset = { x: 0, y: 0 };
+
     this.destroyParticleSystem(true);
     this.camera = newContainer;
     this.layerManager = layerManager || null;
@@ -52,9 +57,9 @@ export class EffectSystem {
   }
 
   update(deltaTime: number): void {
-    // Важно: обновление шейка до обновления камеры, если есть логика слежения
+    if (this.camera.destroyed) return;
     this.updateScreenShake(deltaTime);
-    this.particleSystem.update(deltaTime);
+    this.particleSystem?.update(deltaTime);
   }
 
   // Основной метод для запуска комплексных эффектов
@@ -77,7 +82,7 @@ export class EffectSystem {
             config.endColor = customColor;
           }
         }
-        this.particleSystem.emit(config as ParticleEmitterConfig);
+        this.particleSystem?.emit(config as ParticleEmitterConfig);
       }
     }
     
@@ -254,16 +259,16 @@ export class EffectSystem {
   // Utility methods
   start(): void {
     logger.info('[EffectSystem] start() called', { source: 'game' });
-    this.particleSystem.start();
+    this.particleSystem?.start();
   }
 
   stop(): void {
-    this.particleSystem.stop();
+    this.particleSystem?.stop();
     this.resetCamera();
   }
 
   clear(): void {
-    this.particleSystem.clear();
+    this.particleSystem?.clear();
   }
 
   destroy(): void {
@@ -275,7 +280,7 @@ export class EffectSystem {
   }
 
   getParticleCount(): number {
-    return this.particleSystem.getParticleCount();
+    return this.particleSystem?.getParticleCount() ?? 0;
   }
 
   /**
@@ -360,19 +365,27 @@ export class EffectSystem {
       container.addChild(this.particleContainer);
     }
 
-    const pixiRenderer = this.resolveRenderer(renderer);
-    this.particleSystem = new ParticleSystem(this.particleContainer, pixiRenderer, 2000);
+    try {
+      const pixiRenderer = this.resolveRenderer(renderer);
+      this.particleSystem = new ParticleSystem(this.particleContainer, pixiRenderer, 2000);
+    } catch (error) {
+      logger.error('❌ Failed to initialize ParticleSystem', error as Error, { source: 'effects' });
+      this.particleSystem = null;
+    }
     this.baseCameraPosition = { x: container.x, y: container.y };
   }
 
   private destroyParticleSystem(removeContainer: boolean): void {
     if (this.particleSystem) {
       this.particleSystem.destroy();
+      this.particleSystem = null;
     }
 
-    if (removeContainer && this.particleContainer?.parent) {
-      this.particleContainer.removeChildren();
-      this.particleContainer.parent.removeChild(this.particleContainer);
+    if (removeContainer && this.particleContainer && !this.particleContainer.destroyed) {
+      if (this.particleContainer.parent) {
+        this.particleContainer.removeChildren();
+        this.particleContainer.parent.removeChild(this.particleContainer);
+      }
       this.particleContainer.destroy();
     }
   }

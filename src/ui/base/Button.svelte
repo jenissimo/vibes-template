@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { playClick } from '@/utils/uiSfx';
 
   interface Props {
     variant?: 'primary' | 'secondary' | 'danger' | 'success';
@@ -23,6 +24,7 @@
 
   function handleClick(event: MouseEvent) {
     if (!disabled) {
+      playClick();
       onclick?.(event);
     }
   }

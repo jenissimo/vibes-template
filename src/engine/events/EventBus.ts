@@ -78,7 +78,37 @@ export interface AppEvents {
   'add-credits': { amount: number };
   'settings-open': void;
   'settings-close': void;
+
+  // WebGL context (emitted by PixiRenderer, consumed by Game/AudioManager)
+  'webgl-context-lost': void;
+  'webgl-context-restored': void;
+
+  // Monetization — audio/ticker integration (emitted by AdService, consumed by Game/AudioManager)
+  'ad-will-show': void;
+  'ad-did-dismiss': void;
+
+  // Monetization — ad lifecycle (analytics hooks)
+  'ad-started': { adType: 'rewarded' | 'interstitial'; placement: string };
+  'ad-completed': { adType: 'rewarded' | 'interstitial'; placement: string };
+  'ad-revenue': { adType: string; placement: string; revenue: number; network: string };
+
+  // Monetization — privacy (Settings UI → MonetizationService)
+  'open-privacy-options': void;
+
+  // IAP — purchase intents (UI → handler)
+  'purchase-no-ads': void;
+  'restore-purchases': void;
+
+  // IAP — results (handler → UI feedback)
+  'purchase-result': { success: boolean; cancelled?: boolean; error?: string };
+  'restore-result': { success: boolean; message: 'restored' | 'nothing' | 'error' };
+
+  // Localization
+  'locale-changed': { locale: string };
 }
+
+// Symbol key ensures a single EventBus even if module is loaded twice via Vite alias duplication
+const GLOBAL_KEY = Symbol.for('__vibes_eventbus__');
 
 export class EventBus {
   private static instance: EventBus;
@@ -88,9 +118,14 @@ export class EventBus {
   private constructor() {}
 
   public static getInstance(): EventBus {
+    // Survive Vite module duplication from overlapping path aliases
+    const g = globalThis as any;
+    if (g[GLOBAL_KEY]) return g[GLOBAL_KEY];
+
     if (!EventBus.instance) {
       EventBus.instance = new EventBus();
     }
+    g[GLOBAL_KEY] = EventBus.instance;
     return EventBus.instance;
   }
 

@@ -4,6 +4,8 @@ import { mount } from 'svelte';
 import App from './App.svelte';
 import { GameBootstrap } from './engine/GameBootstrap';
 import { GameConfig } from './engine/Game';
+import { i18nService } from '@/engine/i18n';
+import type { LanguagePreference } from '@/engine/i18n';
 
 import './styles/theme.css';
 import './utils/safeZoneTest';
@@ -62,6 +64,25 @@ async function bootstrap() {
   if (bootstrapPromise) return bootstrapPromise;
 
   const run = async () => {
+    // Initialize i18n BEFORE mounting Svelte so loc() works from first render
+    if (!i18nService.getAvailableLocales().length) {
+      const translationModules = import.meta.glob('/src/i18n/*.json', { eager: true });
+      let savedPreference: LanguagePreference = 'system';
+      try {
+        const raw = localStorage.getItem('vibes-profile');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const pref = parsed?.data?.settings?.languagePreference;
+          if (pref) savedPreference = pref as LanguagePreference;
+        }
+      } catch { /* use default */ }
+      i18nService.initialize({
+        fallbackLocale: 'en',
+        translationModules,
+        savedPreference,
+      });
+    }
+
     if (!svelteApp) {
       const target = document.getElementById('app');
       if (!target) throw new Error('#app root element is missing');

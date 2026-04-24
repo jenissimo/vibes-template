@@ -12,6 +12,7 @@ import { audioManager } from "./audio/AudioManager";
 import { CoordinateService } from "./coordinates/CoordinateService";
 import { logger } from "./logging";
 import { PixiConfig } from "./render/PixiRenderer";
+import { eventBus } from "./events/EventBus";
 
 export interface GameConfig {
   enableDebugOverlay?: boolean;
@@ -31,6 +32,8 @@ export class Game {
   private globalSystems: GlobalSystem[] = [];
   private tickerCallback: ((ticker: PIXI.Ticker) => void) | null = null;
   private isInitialized = false;
+  private isContextLost = false;
+  private adEventUnsubs: (() => void)[] = [];
   private config: GameConfig;
 
   constructor(config: GameConfig = {}, private firstScene: Scene) {
@@ -101,6 +104,30 @@ export class Game {
         this.update(deltaTime);
       };
       logger.info('✅ Ticker callback ready', { source: 'game' });
+
+      // 7b. Pause/resume ticker for ads and WebGL context loss
+      this.adEventUnsubs.push(
+        eventBus.on('ad-will-show', () => {
+          this.pixiRenderer.getApp().ticker.stop();
+          logger.info('Ticker paused for ad', { source: 'game' });
+        }),
+        eventBus.on('ad-did-dismiss', () => {
+          if (!this.isContextLost) {
+            this.pixiRenderer.getApp().ticker.start();
+            logger.info('Ticker resumed after ad', { source: 'game' });
+          }
+        }),
+        eventBus.on('webgl-context-lost', () => {
+          this.isContextLost = true;
+          this.pixiRenderer.getApp().ticker.stop();
+          logger.warn('Ticker paused — WebGL context lost', { source: 'game' });
+        }),
+        eventBus.on('webgl-context-restored', () => {
+          this.isContextLost = false;
+          this.pixiRenderer.getApp().ticker.start();
+          logger.info('Ticker resumed — WebGL context restored', { source: 'game' });
+        }),
+      );
 
       // 8. FPS limit
       if (this.config.enableFPSLimit && this.config.targetFPS) {
@@ -259,6 +286,10 @@ export class Game {
 
     logger.info('🧹 Очистка игрового ядра...', { source: 'game' });
 
+    // Unsubscribe ad/context event listeners
+    for (const unsub of this.adEventUnsubs) unsub();
+    this.adEventUnsubs.length = 0;
+
     // Remove game loop from PIXI ticker
     this.stopGame();
 
@@ -268,11 +299,10 @@ export class Game {
 
     // Очищаем системы в обратном порядке
     if (this.effectSystem) {
-      this.effectSystem.stop();
-      this.effectSystem.clear();
+      this.effectSystem.destroy();
     }
 
-    // AudioManager - singleton, не очищаем при destroy
+    // AudioManager — singleton, cleaned by GameBootstrap.teardown()
 
     GestureRecognizer.getInstance().destroy();
 
