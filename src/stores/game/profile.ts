@@ -2,6 +2,9 @@ import { eventBus } from '@/engine/events';
 import { logger } from '@/engine/logging';
 import { map } from 'nanostores';
 
+/** Storage key for the persisted profile. Kept in sync with PersistenceService. */
+const PROFILE_STORAGE_KEY = 'idle-neon-miner-profile';
+
 /**
  * Player settings interface - только вкл/выкл
  */
@@ -10,6 +13,8 @@ export interface PlayerSettings {
     musicEnabled: boolean;
     sfxEnabled: boolean;
   };
+  /** 'system' or a SupportedLocale code. Optional; absent = use system. */
+  languagePreference?: string;
   version: string;
 }
 
@@ -112,3 +117,21 @@ export const profileSelectors = {
   settings: () => profileStore.get().settings,
   audio: () => profileStore.get().settings.audio,
 };
+
+/**
+ * Read the persisted language preference directly from localStorage,
+ * without initializing the full PersistenceService.
+ *
+ * Used by main.ts to seed i18n before Svelte mounts.
+ * Returns undefined when no value is persisted or storage is unavailable.
+ */
+export function getPersistedLanguagePreference(): string | undefined {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { data?: PlayerProfile };
+    return parsed?.data?.settings?.languagePreference;
+  } catch {
+    return undefined;
+  }
+}

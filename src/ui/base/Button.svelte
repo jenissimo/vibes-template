@@ -8,6 +8,8 @@
     size?: 'sm' | 'md' | 'lg';
     fullWidth?: boolean;
     type?: 'button' | 'submit' | 'reset';
+    /** Set to `true` to suppress the default UI click SFX (e.g. for silent/stealth buttons). */
+    silent?: boolean;
     onclick?: (event: MouseEvent) => void;
     children?: Snippet;
   }
@@ -18,13 +20,14 @@
     size = 'md',
     fullWidth = false,
     type = 'button',
+    silent = false,
     onclick,
     children
   }: Props = $props();
 
   function handleClick(event: MouseEvent) {
     if (!disabled) {
-      playClick();
+      if (!silent) playClick();
       onclick?.(event);
     }
   }

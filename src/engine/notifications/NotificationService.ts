@@ -53,6 +53,7 @@ export class NotificationService {
 
   private _visibilityHandler: (() => void) | null = null;
   private _listenerHandles: { remove: () => Promise<void> }[] = [];
+  private _destroyed = false;
 
   async initialize(): Promise<void> {
     this._isNative = Capacitor.isNativePlatform();
@@ -105,8 +106,10 @@ export class NotificationService {
     };
     document.addEventListener('visibilitychange', this._visibilityHandler);
 
-    this.addCapacitorListener(App.addListener('pause', () => this.onAppPause()));
-    this.addCapacitorListener(App.addListener('resume', () => this.onAppResume()));
+    await Promise.all([
+      this.addCapacitorListener(App.addListener('pause', () => this.onAppPause())),
+      this.addCapacitorListener(App.addListener('resume', () => this.onAppResume())),
+    ]);
 
     // Clear stale notifications from previous session
     await this.clearAll();
@@ -162,6 +165,8 @@ export class NotificationService {
   }
 
   destroy(): void {
+    this._destroyed = true;
+
     if (this._visibilityHandler) {
       document.removeEventListener('visibilitychange', this._visibilityHandler);
       this._visibilityHandler = null;
@@ -270,7 +275,13 @@ export class NotificationService {
     }
   }
 
-  private addCapacitorListener(handle: Promise<{ remove: () => Promise<void> }>): void {
-    handle.then(h => this._listenerHandles.push(h));
+  private async addCapacitorListener(handle: Promise<{ remove: () => Promise<void> }>): Promise<void> {
+    const h = await handle;
+    // destroy() may have run while we awaited — don't leak the listener
+    if (this._destroyed) {
+      h.remove().catch(() => {});
+      return;
+    }
+    this._listenerHandles.push(h);
   }
 }
