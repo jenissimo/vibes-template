@@ -1,5 +1,6 @@
 import { atom } from 'nanostores';
 import { logger } from '@/engine/logging';
+import { eventBus } from '@/engine/events/EventBus';
 import { Howl, Howler } from 'howler';
 import { SfxPlayer } from './sfx/SfxPlayer';
 import { profileStore, profileActions } from '@/stores/game/profile';
@@ -44,6 +45,7 @@ export class AudioManager {
   private tracksInitialized = false;
   private isSyncing = false;
   private isInitializing = false;
+  private adEventUnsubs: (() => void)[] = [];
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   public async initialize(): Promise<void> {
@@ -56,20 +58,23 @@ export class AudioManager {
     logger.info('🎵 Initializing AudioManager…', { source: 'game' });
     try {
       await withTimeout(this.performInitialization(), INIT_TIMEOUT_MS, 'AudioManager init');
-      this.isInitialized = true;
       logger.info('✅ AudioManager initialized', { source: 'game' });
-
-      if (this.pendingMusicId) {
-        logger.info(`🎵 Playing queued music: ${this.pendingMusicId}`, { source: 'game' });
-        await this.playMusic(this.pendingMusicId);
-        this.pendingMusicId = null;
-      }
     } catch (err) {
-      logger.warn('⚠️ AudioManager init failed, continuing without audio', { err, source: 'game' });
-      this.audioAvailable = false;
-      this.isInitialized = true;
+      // Timeout is expected on Android WebView before first user gesture.
+      // Howler will auto-unlock AudioContext on tap, so keep audioAvailable = true.
+      logger.warn('⚠️ AudioManager init timeout (audio will unlock on first tap)', { err, source: 'game' });
     } finally {
+      this.isInitialized = true;
       this.isInitializing = false;
+    }
+
+    // Setup unlock listener for Android WebView — retry pending music on first tap
+    this.setupUnlockListener();
+
+    if (this.pendingMusicId) {
+      logger.info(`🎵 Playing queued music: ${this.pendingMusicId}`, { source: 'game' });
+      await this.playMusic(this.pendingMusicId);
+      this.pendingMusicId = null;
     }
   }
 
@@ -77,16 +82,24 @@ export class AudioManager {
     this.initHowlerFromConfig(this.configStore.get());
     this.initConfigListener();
     this.initPersistence();
+    this.initAdMuteListeners();
     this.ensureTracksInitialized();
     this.applySettingsFromStore();
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
   public playSFX(id: SfxId, params?: SfxPlayParams): void {
-    if (!this.ready()) return;
+    if (!this.ready()) {
+      if (this.isInitialized && !this.audioAvailable) {
+        void this.tryRecoverAudio();
+      }
+      return;
+    }
     const cfg = this.configStore.get();
     if (cfg.muted || cfg.sfxVolume === 0) return;
-    this.sfx.play(id, params);
+    this.sfx.play(id, params).catch((err) => {
+      logger.warn('⚠️ SFX play failed', { id, err, source: 'game' });
+    });
   }
 
   public async playMusic(id: MusicId): Promise<void> {
@@ -335,13 +348,70 @@ export class AudioManager {
     return this.isInitialized && this.audioAvailable;
   }
 
+  private setupUnlockListener(): void {
+    const unlock = () => {
+      // Howler auto-resumes AudioContext on user gesture.
+      // If we have pending music, try to play it now.
+      if (this.pendingMusicId) {
+        const id = this.pendingMusicId;
+        this.pendingMusicId = null;
+        logger.info(`🔓 Audio unlocked by user gesture, playing: ${id}`, { source: 'game' });
+        void this.playMusic(id);
+      }
+      document.removeEventListener('touchstart', unlock, true);
+      document.removeEventListener('click', unlock, true);
+    };
+    document.addEventListener('touchstart', unlock, { capture: true, once: true });
+    document.addEventListener('click', unlock, { capture: true, once: true });
+  }
+
+  private initAdMuteListeners(): void {
+    this.adEventUnsubs.push(
+      eventBus.on('ad-will-show', () => {
+        Howler.mute(true);
+        logger.info('Audio muted for ad', { source: 'game' });
+      }),
+      eventBus.on('ad-did-dismiss', () => {
+        const cfg = this.configStore.get();
+        Howler.mute(cfg.muted);
+        logger.info('Audio restored after ad', { source: 'game' });
+      }),
+    );
+  }
+
+  private async tryRecoverAudio(): Promise<boolean> {
+    if (this.audioAvailable || this.isInitializing) return this.audioAvailable;
+
+    logger.info('🔄 Attempting audio recovery…', { source: 'game' });
+    this.isInitializing = true;
+    try {
+      await withTimeout(this.performInitialization(), INIT_TIMEOUT_MS, 'AudioManager recovery');
+      this.audioAvailable = true;
+      logger.info('✅ Audio recovered', { source: 'game' });
+      return true;
+    } catch (err) {
+      logger.warn('⚠️ Audio recovery failed', { err, source: 'game' });
+      return false;
+    } finally {
+      this.isInitializing = false;
+    }
+  }
+
   public cleanup(): void {
     logger.info('🧹 AudioManager cleanup…', { source: 'game' });
+    for (const unsub of this.adEventUnsubs) unsub();
+    this.adEventUnsubs.length = 0;
     this.stopAll();
     for (const [, howl] of this.music) howl.unload();
     this.music.clear();
     this.pausedMusicId = null;
     this.pendingMusicId = null;
+    this.currentMusicId = null;
+    this.currentSoundId = null;
+    this.pausedSoundId = null;
+    this.tracksInitialized = false;
+    this.isInitialized = false;
+    this.audioAvailable = true;
     logger.info('✅ AudioManager cleaned', { source: 'game' });
   }
 }

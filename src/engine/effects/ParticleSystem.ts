@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { logger } from '@/engine/logging';
 import type { ParticleEmitterConfig } from '../../shared/game-types';
 
 // Re-export for backward compatibility
@@ -200,9 +201,10 @@ export class ParticleSystem {
    * Генерация текстур для различных типов частиц
    */
   private _generateParticleTextures(): void {
-    // Простая белая точка/квадрат - для искр и простых эффектов
+    // Default texture always works — no renderer needed
     this._textures.set('default', PIXI.Texture.WHITE);
-    
+
+    try {
     // Мягкая круглая частица - идеальна для огня, дыма, магии
     // Уменьшаем размер с 64x64 до 16x16
     const softCircle = new PIXI.Graphics()
@@ -311,6 +313,9 @@ export class ParticleSystem {
     const iceParticle = new PIXI.Graphics();
     iceParticle.circle(0, 0, 3.5).fill({ color: 0x00ffff, alpha: 0.9 });
     this._textures.set('ice_particle', this._renderer.generateTexture(iceParticle));
+    } catch (error) {
+      logger.warn('⚠️ Particle texture generation failed, using default', { error, source: 'effects' });
+    }
   }
 
   /**
@@ -403,7 +408,8 @@ export class ParticleSystem {
   }
   
   emit(config: ParticleEmitterConfig): void {
-    const texture = this._textures.get(config.textureId || 'default')!;
+    const texture = this._textures.get(config.textureId || 'default');
+    if (!texture) return;
 
     for (let i = 0; i < config.count; i++) {
       if (this._activeParticles.length >= this._maxParticles) break;

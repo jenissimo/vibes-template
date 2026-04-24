@@ -125,38 +125,51 @@ export function placeAnchoredCentered(
 }
 
 /**
- * Чтение safe-area insets из CSS с fallback на дефолтные значения
+ * Чтение safe-area insets из CSS с fallback на дефолтные значения.
+ * Приоритет: --native-safe-* (Android cutout) > env(safe-area-inset-*) (iOS) > defaults
  */
 export function readSafeInsets(): Insets {
+  const rootStyle = getComputedStyle(document.documentElement);
+
+  // 1) Try native insets injected from Android/iOS native code
+  const nativeTop = parseFloat(rootStyle.getPropertyValue('--native-safe-top'));
+  if (!isNaN(nativeTop)) {
+    const insets = {
+      top: nativeTop,
+      right: parseFloat(rootStyle.getPropertyValue('--native-safe-right')) || 0,
+      bottom: parseFloat(rootStyle.getPropertyValue('--native-safe-bottom')) || 0,
+      left: parseFloat(rootStyle.getPropertyValue('--native-safe-left')) || 0,
+    };
+    logger.info(`📐 Native safe-area insets: top=${insets.top}, right=${insets.right}, bottom=${insets.bottom}, left=${insets.left}`, { source: 'game' });
+    return insets;
+  }
+
+  // 2) Try CSS env() via safe-probe element (works on iOS Safari/WKWebView)
   const el = document.getElementById('safe-probe');
-  if (!el) {
-    logger.warn('Safe-area probe element not found, using default insets', { source: 'game' });
-    return getDefaultInsets();
+  if (el) {
+    const cs = getComputedStyle(el);
+    const toPx = (s: string) => {
+      const value = parseFloat(s || '0');
+      return isNaN(value) || !isFinite(value) ? 0 : value;
+    };
+
+    const insets = {
+      top: toPx(cs.paddingTop),
+      right: toPx(cs.paddingRight),
+      bottom: toPx(cs.paddingBottom),
+      left: toPx(cs.paddingLeft),
+    };
+
+    const allZero = insets.top === 0 && insets.right === 0 && insets.bottom === 0 && insets.left === 0;
+    if (!allZero) {
+      logger.info(`📐 Safe-area insets: top=${insets.top}, right=${insets.right}, bottom=${insets.bottom}, left=${insets.left}`, { source: 'game' });
+      return insets;
+    }
   }
-  
-  const cs = getComputedStyle(el);
-  const toPx = (s: string) => {
-    const value = parseFloat(s || '0');
-    // Проверяем, что значение не NaN и не Infinity
-    return isNaN(value) || !isFinite(value) ? 0 : value;
-  };
-  
-  const insets = {
-    top: toPx(cs.paddingTop),
-    right: toPx(cs.paddingRight),
-    bottom: toPx(cs.paddingBottom),
-    left: toPx(cs.paddingLeft),
-  };
-  
-  // Дополнительная проверка: если все insets равны 0, используем дефолтные значения
-  const allZero = insets.top === 0 && insets.right === 0 && insets.bottom === 0 && insets.left === 0;
-  if (allZero) {
-    logger.warn(`📐 All safe-area insets are zero - using default fallback values`, { source: 'game' });
-    return getDefaultInsets();
-  }
-  
-  logger.info(`📐 Safe-area insets: top=${insets.top}, right=${insets.right}, bottom=${insets.bottom}, left=${insets.left}`, { source: 'game' });
-  return insets;
+
+  // 3) Fallback to defaults
+  logger.warn(`📐 All safe-area insets are zero - using default fallback values`, { source: 'game' });
+  return getDefaultInsets();
 }
 
 /**
