@@ -6,6 +6,7 @@ import { GameBootstrap } from './engine/GameBootstrap';
 import { GameConfig } from './engine/Game';
 import { i18nService } from '@/engine/i18n';
 import type { LanguagePreference } from '@/engine/i18n';
+import { getPersistedLanguagePreference } from '@/stores/game/profile';
 
 import './styles/theme.css';
 import './utils/safeZoneTest';
@@ -67,15 +68,7 @@ async function bootstrap() {
     // Initialize i18n BEFORE mounting Svelte so loc() works from first render
     if (!i18nService.getAvailableLocales().length) {
       const translationModules = import.meta.glob('/src/i18n/*.json', { eager: true });
-      let savedPreference: LanguagePreference = 'system';
-      try {
-        const raw = localStorage.getItem('vibes-profile');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const pref = parsed?.data?.settings?.languagePreference;
-          if (pref) savedPreference = pref as LanguagePreference;
-        }
-      } catch { /* use default */ }
+      const savedPreference = (getPersistedLanguagePreference() ?? 'system') as LanguagePreference;
       i18nService.initialize({
         fallbackLocale: 'en',
         translationModules,

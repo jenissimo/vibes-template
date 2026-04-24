@@ -18,15 +18,12 @@ export class MockIAPService implements IAPService {
     };
   }
 
-  purchase(_productId: string): Promise<PurchaseResult> {
+  async purchase(_productId: string): Promise<PurchaseResult> {
     logger.info('MockIAPService.purchase: simulating...', { source: 'iap-mock' });
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const expiresAt = Date.now() + NO_ADS_DURATION_MS;
-        logger.info('MockIAPService.purchase: success', { source: 'iap-mock', expiresAt });
-        resolve({ success: true, expiresAt });
-      }, 500);
-    });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const expiresAt = Date.now() + NO_ADS_DURATION_MS;
+    logger.info('MockIAPService.purchase: success', { source: 'iap-mock', expiresAt });
+    return { success: true, expiresAt };
   }
 
   async restorePurchases(): Promise<RestoreResult> {

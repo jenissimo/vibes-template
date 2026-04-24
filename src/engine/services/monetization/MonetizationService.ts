@@ -6,15 +6,23 @@ import { AdResult } from '@/engine/services/ads/AdService';
 import type { AdPlacement } from '@/engine/services/ads/AdPlacements';
 import type { RewardType, RewardResult } from '@/stores/game/monetization';
 
+export interface MonetizationServiceOptions {
+  /** Minimum interval between interstitials in ms. Defaults to 60_000. */
+  minInterstitialIntervalMs?: number;
+}
+
+const DEFAULT_MIN_INTERSTITIAL_INTERVAL_MS = 60_000;
+
 export class MonetizationService {
   private adService: AdService;
   private inFlight = false;
   private lastInterstitialTime = 0;
-  private readonly minInterstitialIntervalMs = 60_000;
+  private readonly minInterstitialIntervalMs: number;
   private unsubscribers: (() => void)[] = [];
 
-  constructor(adService: AdService) {
+  constructor(adService: AdService, options: MonetizationServiceOptions = {}) {
     this.adService = adService;
+    this.minInterstitialIntervalMs = options.minInterstitialIntervalMs ?? DEFAULT_MIN_INTERSTITIAL_INTERVAL_MS;
 
     this.unsubscribers.push(
       eventBus.on('open-privacy-options', () => {
@@ -25,7 +33,7 @@ export class MonetizationService {
     );
   }
 
-  async offerReward(_type: RewardType, placement: AdPlacement): Promise<RewardResult> {
+  async offerReward(rewardType: RewardType, placement: AdPlacement): Promise<RewardResult> {
     if (this.inFlight) {
       return { granted: false, reason: 'in-flight' };
     }
@@ -42,17 +50,17 @@ export class MonetizationService {
 
     this.inFlight = true;
     try {
-      eventBus.emit('ad-started', { adType: 'rewarded', placement });
+      eventBus.emit('ad-started', { adType: 'rewarded', placement, rewardType });
 
       const result = await this.adService.showRewarded();
 
       if (result === AdResult.Completed) {
-        eventBus.emit('ad-completed', { adType: 'rewarded', placement });
-        logger.info(`Rewarded ad completed [${placement}]`, { source: 'monetization' });
+        eventBus.emit('ad-completed', { adType: 'rewarded', placement, rewardType });
+        logger.info(`Rewarded ad completed [${placement}/${rewardType}]`, { source: 'monetization' });
         return { granted: true };
       }
 
-      logger.info(`Rewarded ad not completed: ${result} [${placement}]`, { source: 'monetization' });
+      logger.info(`Rewarded ad not completed: ${result} [${placement}/${rewardType}]`, { source: 'monetization' });
       return { granted: false, reason: 'failed' };
     } catch (e) {
       logger.error('offerReward error', e as Error, { source: 'monetization' });

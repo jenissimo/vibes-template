@@ -88,8 +88,8 @@ export interface AppEvents {
   'ad-did-dismiss': void;
 
   // Monetization — ad lifecycle (analytics hooks)
-  'ad-started': { adType: 'rewarded' | 'interstitial'; placement: string };
-  'ad-completed': { adType: 'rewarded' | 'interstitial'; placement: string };
+  'ad-started': { adType: 'rewarded' | 'interstitial'; placement: string; rewardType?: string };
+  'ad-completed': { adType: 'rewarded' | 'interstitial'; placement: string; rewardType?: string };
   'ad-revenue': { adType: string; placement: string; revenue: number; network: string };
 
   // Monetization — privacy (Settings UI → MonetizationService)
@@ -119,8 +119,9 @@ export class EventBus {
 
   public static getInstance(): EventBus {
     // Survive Vite module duplication from overlapping path aliases
-    const g = globalThis as any;
-    if (g[GLOBAL_KEY]) return g[GLOBAL_KEY];
+    const g = globalThis as unknown as Record<symbol, EventBus | undefined>;
+    const existing = g[GLOBAL_KEY];
+    if (existing) return existing;
 
     if (!EventBus.instance) {
       EventBus.instance = new EventBus();

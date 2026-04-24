@@ -76,7 +76,8 @@ class I18nService {
       this.warnedKeys.add(key);
       logger.warn(`i18n: missing key "${key}" for locale "${this.resolvedLocale}"`);
     }
-    return key;
+    // In DEV wrap in angle brackets so missing keys are visually obvious in the UI
+    return import.meta.env.DEV ? `‹${key}›` : key;
   }
 
   locEx(key: string, params: Record<string, string | number>): string {
